@@ -11,19 +11,20 @@ export function normalizeText(text) {
     .trim();
 }
 
-// Easy mode: lowercase letters and spaces only (no capitals, no punctuation).
+// Easy mode: letters and spaces only (no punctuation). Capitals stay as written, so names and
+// God's names keep their capital letters; easy mode accepts them typed without Shift.
 export function easyText(text) {
   return normalizeText(text)
-    .toLowerCase()
-    .replace(/[^a-z ]/g, '')
+    .replace(/[^A-Za-z ]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
 export class TypingSession {
-  constructor(text, { stopOnError = false } = {}) {
+  constructor(text, { stopOnError = false, ignoreCase = false } = {}) {
     this.text = text;
     this.stopOnError = stopOnError;
+    this.ignoreCase = ignoreCase;   // easy mode: a lowercase letter counts for a capital
     this.typed = [];            // what was typed at each position
     this.keystrokes = 0;        // every character key pressed
     this.errors = 0;            // every wrong key pressed (even if fixed later)
@@ -41,13 +42,14 @@ export class TypingSession {
     if (this.startedAt === null) this.startedAt = now;
     const expected = this.text[this.position];
     this.keystrokes++;
-    const ok = ch === expected;
+    const ok = this.ignoreCase ? ch.toLowerCase() === expected.toLowerCase() : ch === expected;
     if (!ok) {
       this.errors++;
-      this.missed[expected] = (this.missed[expected] || 0) + 1;
+      const key = this.ignoreCase ? expected.toLowerCase() : expected;
+      this.missed[key] = (this.missed[key] || 0) + 1;
       if (this.stopOnError) return 'blocked';
     }
-    this.typed.push(ch);
+    this.typed.push(ok ? expected : ch);
     if (this.position >= this.text.length) this.finishedAt = now;
     return ok ? 'correct' : 'wrong';
   }

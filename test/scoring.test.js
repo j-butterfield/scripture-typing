@@ -59,7 +59,8 @@ test('computeStats handles zero time', () => {
 
 test('text helpers', () => {
   assert.equal(normalizeText('“Hi” — it’s\n ok'), '"Hi" - it\'s ok');
-  assert.equal(easyText('The LORD is my shepherd; I shall not want.'), 'the lord is my shepherd i shall not want');
+  assert.equal(easyText('The LORD is my shepherd; I shall not want.'), 'The LORD is my shepherd I shall not want');
+  assert.equal(easyText("for his name's sake, Beth-el"), 'for his names sake Bethel');
   assert.equal(starsFor(99), 3);
   assert.equal(starsFor(92), 2);
   assert.equal(starsFor(50), 1);
@@ -73,4 +74,15 @@ test('built-in passages are typeable on a normal keyboard', () => {
     assert.match(p.text, /^[\x20-\x7E]+$/, `${p.ref} has untypeable characters`);
     assert.ok(p.ref && p.text.length > 5);
   }
+});
+
+test('easy mode accepts capitals typed without Shift and keeps them capital', () => {
+  const s = new TypingSession('Jesus wept', { ignoreCase: true });
+  for (const ch of 'jesus wept') s.input(ch, 0);
+  assert.equal(s.done, true);
+  assert.equal(s.stats().errors, 0);
+  assert.equal(s.typed.join(''), 'Jesus wept');
+  const strict = new TypingSession('Jesus');
+  strict.input('j', 0);
+  assert.equal(strict.stats().errors, 1);
 });

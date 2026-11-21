@@ -399,7 +399,9 @@ function viewTyping(config) {
     ({ text, segs } = buildText(config.passages, st.easyMode, timed ? 4000 : 0));
   }
   const showKb = st.showKeyboard || !!lesson;
-  const session = new TypingSession(text, { stopOnError: st.stopOnError });
+  // Easy mode shows capitals as written but accepts them without Shift (not in lessons, which teach Shift).
+  const easyCaps = st.easyMode && !lesson;
+  const session = new TypingSession(text, { stopOnError: st.stopOnError, ignoreCase: easyCaps });
 
   app.innerHTML = `
     <header class="top">
@@ -464,8 +466,9 @@ function viewTyping(config) {
     const line = Math.round((cur.getBoundingClientRect().top - tx.getBoundingClientRect().top) / lh);
     const target = Math.max(0, (line - 1) * lh);
     if (Math.abs(tb.scrollTop - target) > 2) tb.scrollTo({ top: target, behavior: 'smooth' });
-    kb.highlight(text[pos]);
-    hands.show(fingersFor(text[pos]));
+    const guideCh = easyCaps && text[pos] ? text[pos].toLowerCase() : text[pos];
+    kb.highlight(guideCh);
+    hands.show(fingersFor(guideCh));
     let seg = segs[0];
     for (const sg of segs) if (sg.start <= pos) seg = sg;
     if (seg !== shownRef) { shownRef = seg; refEl.textContent = seg.p.ref; }
@@ -967,7 +970,7 @@ function viewProfileEditor(profileId, back) {
         ${COLORS.map((c) => `<label class="pick-item"><input type="radio" name="color" value="${c}" ${c === color ? 'checked' : ''}><span class="swatch" style="background:${c}"></span></label>`).join('')}
       </div></fieldset>
       <fieldset><legend>Typing settings</legend>
-        <label class="check"><input type="checkbox" name="easyMode" ${st.easyMode ? 'checked' : ''}> <span><b>Easy mode</b> - only lowercase letters and spaces (no capitals or punctuation). Good for young beginners.</span></label>
+        <label class="check"><input type="checkbox" name="easyMode" ${st.easyMode ? 'checked' : ''}> <span><b>Easy mode</b> - no punctuation, and no Shift key needed: capital letters are still shown (like God, Jesus and David) but typing them in lowercase counts as right. Good for young beginners.</span></label>
         <label class="check"><input type="checkbox" name="stopOnError" ${st.stopOnError ? 'checked' : ''}> <span><b>Wait for the right key</b> - the cursor will not move on until the correct key is pressed. Turn off for older kids, who will then use Backspace to fix mistakes.</span></label>
         <label class="check"><input type="checkbox" name="showKeyboard" ${st.showKeyboard ? 'checked' : ''}> <span><b>Show keyboard guide</b> - lights up the next key and which finger to use.</span></label>
         <label class="check"><input type="checkbox" name="unlockLessons" ${st.unlockLessons ? 'checked' : ''}> <span><b>Unlock all lessons</b> - normally each lesson opens once the one before it is passed with ${PASS_ACCURACY}% accuracy.</span></label>

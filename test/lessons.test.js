@@ -27,3 +27,15 @@ test('reach instructions name the right finger', () => {
   assert.match(howToReach('f'), /home key/);
   assert.equal(fingerOf('P'), 'R1');
 });
+
+test('nothing that should be capitalized ever appears in lowercase', () => {
+  const shouldBeCapital = /\b(god|lord|jesus|christ|i|israel|david|moses|noah|peter|james|john|we the people|congress)\b/;
+  for (let i = 1; i < LESSONS.length; i++) {
+    for (let run = 0; run < 20; run++) {
+      for (const ex of buildExercises(i).filter((e) => /words|phrases|names|verse/i.test(e.title))) {
+        const words = ex.text.toLowerCase() === ex.text ? ex.text : ex.text.replace(/\b[A-Z][a-zA-Z]*\b/g, '');
+        assert.doesNotMatch(` ${words} `, shouldBeCapital, `${LESSONS[i].title} / ${ex.title}: "${ex.text}"`);
+      }
+    }
+  }
+});

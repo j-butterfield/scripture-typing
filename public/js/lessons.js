@@ -74,7 +74,8 @@ export const LESSONS = [
   { id: 'qp', unit: 'Top row', title: 'Q and P', keys: 'qp' },
   {
     id: 'top-review', unit: 'Top row', title: 'Top row review', keys: '', review: true,
-    phrases: ['praise the lord', 'the word of the lord is right', 'the lord is good', 'pray always', 'a joyful heart', 'the tree of life', 'the earth is the lords', 'we the people'],
+    // Before Shift is taught: only phrases that are correct all in lowercase (no names, no God or LORD, no "I").
+    phrases: ['pray always', 'a joyful heart', 'the tree of life', 'ye are the salt of the earth', 'ye are the light of the world', 'keep thy heart', 'the path of the just'],
   },
   { id: 'c,', unit: 'Bottom row', title: 'C and comma', keys: 'c,' },
   { id: 'vm', unit: 'Bottom row', title: 'V and M', keys: 'vm' },
@@ -83,7 +84,7 @@ export const LESSONS = [
   { id: 'z', unit: 'Bottom row', title: 'Z', keys: 'z' },
   {
     id: 'bottom-review', unit: 'Bottom row', title: 'Bottom row review', keys: '', review: true,
-    phrases: ['jesus wept.', 'pray without ceasing.', 'rejoice evermore.', 'be still, and know that i am god.', 'the lord is my shepherd; i shall not want.', 'in the beginning god created the heaven and the earth.', 'life, liberty and the pursuit of happiness', 'in order to form a more perfect union', 'congress shall make no law'],
+    phrases: ['pray without ceasing.', 'rejoice evermore.', 'love one another.', 'be ye kind one to another,', 'a soft answer turneth away wrath', 'a merry heart doeth good like a medicine', 'in every thing give thanks', 'blessed are the meek', 'blessed are the merciful'],
   },
   {
     id: 'shift', unit: 'Capitals and punctuation', title: 'Capital letters (Shift)', keys: '', shift: true,
@@ -119,14 +120,14 @@ const taughtKeys = (index) => {
 
 const WORDS = `a ad add aid all also and any are as ask at away
 back bad be bed been best big bless blessed boat body bread brother but by
-call came can child children christ church city cold come cross cup
+call came can child children  church city cold come cross cup
 dad day dear did do does door dove down dust
 each ear earth east eat egg else end even ever every eye
 face faith fall far fast father fear feet field fig fill find fire first fish five flag flock flask for forgive found free friend from fruit full
-gave gift give glad glass glory go god gold good grace grass great green
+gave gift give glad glass glory go  gold good grace grass great green
 had half hall hand happy has hat have he head heal hear heard heart heaven help her here hid high hill him his holy home hope house how
 if in is it
-jar joy just keep kid kind king kingdom know lad lake lamb lamp land last laugh lead leaf learn life lift light like lion little live long look lord lost love
+jar joy just keep kid kind king kingdom know lad lake lamb lamp land last laugh lead leaf learn life lift light like lion little live long look  lost love
 made make man many may me mercy might mind more most mother mount much must my
 name near new night no not now oak of off oil old on one only open or our out over
 path peace pray praise prayer psalm pure put
