@@ -3,6 +3,7 @@ import { PASSAGES, FOUNDING, FOUNDING_DOCS, COLLECTIONS, LEVELS, levelFor } from
 import { TypingSession, normalizeText, easyText, starsFor, computeStats } from './scoring.js';
 import { renderKeyboard, fingersFor, getOS, setOS, keyNames, escapeHtml as esc } from './keyboard.js';
 import { renderHands } from './hands.js';
+import { music } from './music.js';
 import { LESSONS, UNITS, POSTURE, PASS_ACCURACY, buildExercises, lessonGuide, fingerOf } from './lessons.js';
 
 const app = document.getElementById('app');
@@ -1057,6 +1058,7 @@ function viewParent() {
         <li><b>Speed (WPM)</b> = correctly typed characters ÷ 5 ÷ minutes. Every 5 characters, including spaces, count as one word. Mistakes left in do not count.</li>
         <li><b>Accuracy</b> = the share of key presses that were right. A mistake still counts even if it is fixed with Backspace.</li>
         <li><b>Stars</b> on a passage: 1 for finishing, 2 for 90%+ accuracy, 3 for 97%+.</li>
+        <li>The 🎵 button in the corner plays soft public domain hymn tunes in the background. Anyone can turn it on or off at any time, and each computer remembers its own choice.</li>
         <li>Built-in verses are from the King James Version (public domain). The Declaration of Independence, Constitution and Bill of Rights are word for word from the National Archives transcripts, with their original spelling.</li>
       </ul>
     </section>`;
@@ -1102,6 +1104,46 @@ function viewParent() {
   });
 }
 
+// ---------------- background hymns ----------------
+// A small control that stays in the corner of every screen, outside #app so re-rendering never touches it.
+function setupMusicControl() {
+  const box = document.createElement('div');
+  box.className = 'music';
+  box.innerHTML = `
+    <button class="music-toggle" type="button" aria-pressed="false" title="Background hymns"><span class="mi">🎵</span><span class="ml">Hymns off</span></button>
+    <div class="music-more" hidden>
+      <span class="music-now" aria-live="polite"></span>
+      <button class="music-skip" type="button" title="Next hymn" aria-label="Next hymn">⏭</button>
+      <input class="music-vol" type="range" min="0" max="1" step="0.05" aria-label="Music volume" title="Volume">
+    </div>`;
+  document.body.appendChild(box);
+  const toggle = box.querySelector('.music-toggle');
+  const vol = box.querySelector('.music-vol');
+  const refresh = () => {
+    toggle.setAttribute('aria-pressed', String(music.on));
+    toggle.classList.toggle('on', music.on);
+    box.querySelector('.ml').textContent = music.on ? 'Hymns on' : 'Hymns off';
+    box.querySelector('.music-more').hidden = !music.on;
+    const h = music.current?.hymn;
+    box.querySelector('.music-now').textContent = h ? `♪ ${h.title}` : '';
+    box.querySelector('.music-now').title = h ? `${h.title}${h.tune ? ` (tune: ${h.tune})` : ''} - ${h.credit}` : '';
+    vol.value = music.volume;
+  };
+  music.onChange(refresh);
+  refresh();
+  // Buttons never keep focus, so a key press while typing can't toggle them by accident.
+  toggle.addEventListener('click', () => { music.toggle(); toggle.blur(); });
+  box.querySelector('.music-skip').addEventListener('click', (e) => { music.skip(); e.currentTarget.blur(); });
+  vol.addEventListener('input', () => music.setVolume(Number(vol.value)));
+  vol.addEventListener('change', () => vol.blur());
+  // Left on last time? Browsers only allow sound after a click or key press, so resume on the first one.
+  if (music.on) {
+    const resume = () => { if (music.on && !music.current) music.start(); };
+    window.addEventListener('pointerdown', resume, { once: true, capture: true });
+    window.addEventListener('keydown', resume, { once: true, capture: true });
+  }
+}
+
 // ---------------- start ----------------
 (async function start() {
   try {
@@ -1112,5 +1154,6 @@ function viewParent() {
   }
   let last = null;
   try { last = localStorage.getItem(LAST_PROFILE_KEY); } catch { /* ignore */ }
+  setupMusicControl();
   if (last && store.profile(last)) { ui.profileId = last; go(viewDashboard); } else go(viewHome);
 })();

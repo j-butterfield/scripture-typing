@@ -374,3 +374,19 @@ legend { font-weight: 700; margin-bottom: 8px; }
 }
 .bsearch input:focus { outline: none; border-color: var(--primary); }
 .small-btn { padding: 4px 10px; font-size: 0.85rem; margin-left: 6px; }
+
+/* background hymns control */
+.music {
+  position: fixed; left: 16px; bottom: 16px; z-index: 15; display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border-radius: 999px; box-shadow: var(--shadow); padding: 4px; max-width: calc(100% - 32px);
+}
+.music-toggle { display: flex; align-items: center; gap: 6px; background: transparent; color: var(--muted); padding: 6px 12px; border-radius: 999px; font-weight: 600; font-size: 0.9rem; }
+.music-toggle.on { background: color-mix(in srgb, var(--alt) 18%, var(--surface)); color: var(--text); }
+.music-toggle:not(.on) .mi { filter: grayscale(1); opacity: 0.6; }
+.music-more { display: flex; align-items: center; gap: 6px; padding-right: 8px; min-width: 0; }
+.music-more[hidden] { display: none; }
+.music-now { font-size: 0.85rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.music-skip { background: transparent; color: var(--text); padding: 4px 6px; font-size: 0.95rem; }
+.music-vol { width: 80px; accent-color: var(--alt); }
+#app { padding-bottom: 80px; }
+@media (max-width: 760px) { .music-now { max-width: 110px; } .music-vol { width: 60px; } }
