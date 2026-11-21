@@ -1061,7 +1061,7 @@ function viewParent() {
         <li><b>Speed (WPM)</b> = correctly typed characters ÷ 5 ÷ minutes. Every 5 characters, including spaces, count as one word. Mistakes left in do not count.</li>
         <li><b>Accuracy</b> = the share of key presses that were right. A mistake still counts even if it is fixed with Backspace.</li>
         <li><b>Stars</b> on a passage: 1 for finishing, 2 for 90%+ accuracy, 3 for 97%+.</li>
-        <li>The 🎵 button in the corner plays soft public domain hymn tunes in the background. Anyone can turn it on or off at any time, and each computer remembers its own choice.</li>
+        <li>The 🎵 button in the corner plays soft public domain hymn tunes on piano, in four-part harmony, in the background. Anyone can turn it on or off at any time, and each computer remembers its own choice. Piano: Salamander Grand Piano by Alexander Holm (CC BY 3.0).</li>
         <li>Built-in verses are from the King James Version (public domain). The Declaration of Independence, Constitution and Bill of Rights are word for word from the National Archives transcripts, with their original spelling.</li>
       </ul>
     </section>`;
@@ -1125,7 +1125,7 @@ function setupMusicControl() {
   const refresh = () => {
     toggle.setAttribute('aria-pressed', String(music.on));
     toggle.classList.toggle('on', music.on);
-    box.querySelector('.ml').textContent = music.on ? 'Hymns on' : 'Hymns off';
+    box.querySelector('.ml').textContent = music.loading ? 'Loading piano…' : music.on ? 'Hymns on' : 'Hymns off';
     box.querySelector('.music-more').hidden = !music.on;
     const h = music.current?.hymn;
     box.querySelector('.music-now').textContent = h ? `♪ ${h.title}` : '';

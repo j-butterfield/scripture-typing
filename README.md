@@ -18,9 +18,9 @@ A typing tutor for kids that uses Bible passages as the practice text. You host 
   - They are word for word from the National Archives transcripts, with the original spelling, like "defence".
   - They are split into 152 short parts of about 40 words each (never more than about 65), broken at the ends of sentences or clauses and kept in document order.
   - Speed tests can use them too.
-- **Background hymns.** A 🎵 button in the corner of every screen plays soft, slowed-down hymn tunes, with the hymn's name, skip and volume beside it:
+- **Background hymns.** A 🎵 button in the corner of every screen plays soft hymns on a recorded grand piano, in four-part hymnal harmony, with the hymn's name, skip and volume beside it:
   - It can be turned off at any time, and each computer remembers its own choice.
-  - The tunes are played by the browser itself, so there are no audio files and no internet needed.
+  - The piano is the Salamander Grand Piano by Alexander Holm (CC BY 3.0), about 1.4 MB, stored with the app, so no internet is needed. Credits are in `public/instruments/CREDITS.md`.
   - There are 18 public domain tunes, all published before 1929, such as NEW BRITAIN (Amazing Grace), SLANE, NICAEA, EIN FESTE BURG and OLD HUNDREDTH. Each melody was checked against a second, independent transcription.
 - **Speed tests.** 1, 2, 3 or 5 minute timed tests that measure **speed (WPM)** and **accuracy**.
 - **Keyboard guide.** The on-screen keyboard lights up the next key, color-codes the keys by finger and tells the child which finger to use.
