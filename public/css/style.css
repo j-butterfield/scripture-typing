@@ -171,8 +171,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, .filebtn:focu
 .bar > div { height: 100%; width: 0; background: var(--alt); transition: width 0.2s; }
 .textbox {
   --lh: 2.1em;
-  background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); padding: 18px 24px;
-  height: calc(var(--lh) * 3 + 36px); overflow: hidden; font-size: clamp(20px, 3.2vw, 30px);
+  background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); padding: 0 24px;
+  height: calc(var(--lh) * 3); overflow: hidden; font-size: clamp(20px, 3.2vw, 30px);
 }
 .text { font-family: var(--mono); line-height: var(--lh); color: var(--muted); }
 .word { white-space: nowrap; }

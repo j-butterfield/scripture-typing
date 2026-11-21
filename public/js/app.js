@@ -372,8 +372,11 @@ function viewTyping(config) {
   function follow() {
     const pos = session.position;
     const cur = els[Math.min(pos, els.length - 1)];
+    // Keep the line being typed as the 2nd of the 3 visible lines (the 1st while on line one),
+    // measured from the top of the text itself, so the start of a passage is always shown first.
     const lh = parseFloat(getComputedStyle(tx).lineHeight) || 48;
-    const target = Math.max(0, cur.offsetTop - lh);
+    const line = Math.round((cur.getBoundingClientRect().top - tx.getBoundingClientRect().top) / lh);
+    const target = Math.max(0, (line - 1) * lh);
     if (Math.abs(tb.scrollTop - target) > 2) tb.scrollTo({ top: target, behavior: 'smooth' });
     kb.highlight(text[pos]);
     hands.show(fingersFor(text[pos]));
