@@ -1,0 +1,10 @@
+services:
+  scripture-typing:
+    build: .
+    image: scripture-typing:latest
+    container_name: scripture-typing
+    restart: unless-stopped
+    ports:
+      - "8080:8080"          # change the left number if 8080 is taken on your NAS
+    volumes:
+      - ./data:/data         # kids' progress lives here (back this folder up)
