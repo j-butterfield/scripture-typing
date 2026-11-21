@@ -1,8 +1,8 @@
 @echo off
-title Scripture Typing
+title The Butter Typing Trainer
 cd /d "%~dp0"
 
-rem Runs Scripture Typing on THIS computer (handy for trying it out).
+rem Runs the Butter Typing Trainer on THIS computer (handy for trying it out).
 rem The family normally uses the copy on the NAS - see deploy\QNAP.md.
 
 set "NASADDR="
@@ -20,7 +20,7 @@ if exist data\moved-to-nas.txt (
 where node >nul 2>nul
 if errorlevel 1 (
   echo.
-  echo   Node.js is required to run Scripture Typing.
+  echo   Node.js is required to run the Butter Typing Trainer.
   echo   Install the LTS version from https://nodejs.org then run this again.
   echo.
   pause
@@ -28,7 +28,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo   Starting Scripture Typing...
+echo   Starting the Butter Typing Trainer...
 echo   Your browser will open at http://localhost:8080
 echo   Leave this window open while typing. Close it to stop.
 echo.

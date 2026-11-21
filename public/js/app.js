@@ -164,7 +164,7 @@ function viewHome() {
   const v = verseOfDay();
   app.innerHTML = `
     <header class="top">
-      <h1 class="brand">${icon('practice')} Scripture Typing</h1>
+      <h1 class="brand">${icon('practice')} The Butter Typing Trainer</h1>
       <button class="ghost" data-act="parent">⚙️ Parents</button>
     </header>
     <img class="welcome-art" src="art/welcome.webp" alt="An open Bible on a reading stand with a colorful keyboard, a dove on a plant and a candle" draggable="false">
@@ -253,7 +253,7 @@ function renderSearch(s) {
       <button class="primary" type="submit" ${store.remote ? '' : 'disabled'}>🔎 Search</button>
       ${r || ui.search?.error ? '<button class="ghost" type="button" data-act="clear-search">✕ Clear</button>' : ''}
     </form>
-    ${store.remote ? '' : '<p class="note center">Searching the whole Bible needs the Scripture Typing server on the NAS.</p>'}`;
+    ${store.remote ? '' : '<p class="note center">Searching the whole Bible needs the Butter Typing Trainer server on the NAS.</p>'}`;
   if (ui.search?.error) return `${form}<p class="note center">${esc(ui.search.error)}</p>`;
   if (!r) return form;
   const items = searchItems(r);
@@ -1099,7 +1099,7 @@ function viewParent() {
     const blob = new Blob([JSON.stringify(store.state, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `scripture-typing-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `butter-typing-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });

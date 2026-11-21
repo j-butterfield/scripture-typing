@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions
-title Scripture Typing - Update the NAS
+title The Butter Typing Trainer - Update the NAS
 cd /d "%~dp0"
 
-rem Puts the latest Scripture Typing on the family's QNAP NAS, where Container Station runs it.
+rem Puts the latest Butter Typing Trainer on the family's QNAP NAS, where Container Station runs it.
 rem The NAS side is deploy\qnap\docker-compose.yml: the shared folder, the port and the
 rem restart marker below must match it. deploy\QNAP.md explains the whole set-up.
 set "SHARE=Container"
@@ -22,7 +22,7 @@ if "%~1"=="--pulled" set "PULLED=1"
 
 if not defined PULLED (
   echo.
-  echo   Updating Scripture Typing on the NAS...
+  echo   Updating the Butter Typing Trainer on the NAS...
   echo.
 )
 
@@ -52,7 +52,7 @@ if exist nas-address.txt set /p NAS=<nas-address.txt
 if defined NAS goto :tidyaddress
 
 :askaddress
-echo   Which NAS should Scripture Typing live on? Type its IP address, for example
+echo   Which NAS should the Butter Typing Trainer live on? Type its IP address, for example
 echo   192.168.1.50 (Qfinder Pro shows it - it's the same NAS as Adventures in Shajun).
 echo.
 set "NAS="
@@ -84,7 +84,7 @@ echo.
 
 rem ---- the latest version from GitHub ---------------------------------------------
 
-echo   Fetching the latest Scripture Typing...
+echo   Fetching the latest Butter Typing Trainer...
 git fetch origin main
 if errorlevel 1 (
   echo.
@@ -139,7 +139,7 @@ if errorlevel 8 goto :datafailed
 (
   echo The kids' typing progress moved to the NAS on %DATE%.
   echo It lives in %DEST%\data now,
-  echo and Scripture Typing is at http://%NAS%:%PORT% on every computer.
+  echo and the Butter Typing Trainer is at http://%NAS%:%PORT% on every computer.
   echo This folder is the copy left behind.
 ) > "data\moved-to-nas.txt"
 echo   Done. From now on the progress lives on the NAS.
@@ -156,7 +156,7 @@ rem /MIR makes the app folder match this one exactly. The kids' progress is in t
 rem folder beside it, out of its reach, and this computer's own data\ is never sent.
 
 :app
-echo   Copying Scripture Typing to %DEST%\app ...
+echo   Copying the Butter Typing Trainer to %DEST%\app ...
 robocopy "%SRC%" "%DEST%\app" /MIR /R:2 /W:2 /XJ /FFT /NP /NFL /NDL /NJH /NJS ^
   /XD .git node_modules "%SRC%\data" "%SRC%\test" "%DEST%\app\data" ^
   /XF nas-address.txt %MARKER% *.log Thumbs.db .DS_Store
@@ -170,7 +170,7 @@ rem because a restart in the middle of a speed test interrupts it.
 if not "%RC%"=="0" goto :restart
 echo.
 echo   Nothing new was copied: the NAS already has this version.
-choice /c YN /m "  Restart Scripture Typing on the NAS anyway"
+choice /c YN /m "  Restart the Butter Typing Trainer on the NAS anyway"
 if errorlevel 2 goto :norestart
 
 :restart
@@ -181,13 +181,13 @@ if not exist "%DEST%\app\%MARKER%" (
 )
 
 echo.
-echo   All copied! If Scripture Typing is running on the NAS it restarts itself
+echo   All copied! If the Butter Typing Trainer is running on the NAS it restarts itself
 echo   in a few seconds. Kids already typing should refresh the page.
 goto :typeat
 
 :norestart
 echo.
-echo   Scripture Typing on the NAS carries on as it is.
+echo   The Butter Typing Trainer on the NAS carries on as it is.
 
 :typeat
 echo.

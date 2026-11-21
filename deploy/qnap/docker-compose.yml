@@ -1,4 +1,4 @@
-# Scripture Typing on the QNAP NAS, as a Container Station application.
+# The Butter Typing Trainer on the QNAP NAS, as a Container Station application.
 #
 # Paste all of this into Container Station > Create > Create Application (deploy/QNAP.md walks through it).
 # Run Scripture-Typing-nas-update.bat on the family PC FIRST: it copies the app into the folders below, and

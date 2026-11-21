@@ -1,4 +1,4 @@
-# Scripture Typing Trainer
+# The Butter Typing Trainer
 
 A typing tutor for kids that uses Bible passages as the practice text. You host it on your home NAS, and every computer in the house shares the same progress.
 

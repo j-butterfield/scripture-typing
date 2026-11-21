@@ -1,4 +1,4 @@
-// Scripture Typing Trainer - tiny web server with no dependencies.
+// The Butter Typing Trainer - tiny web server with no dependencies.
 // Serves the app and keeps every child's progress in one JSON file (DATA_DIR/db.json).
 import http from 'node:http';
 import fs from 'node:fs/promises';
@@ -265,7 +265,7 @@ export async function createServer() {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const server = await createServer();
   server.listen(PORT, () => {
-    console.log(`Scripture Typing Trainer running on http://localhost:${PORT}`);
+    console.log(`The Butter Typing Trainer running on http://localhost:${PORT}`);
     if (process.env.PUBLIC_URL) console.log(`Family opens:  ${process.env.PUBLIC_URL}`);
     console.log(`Saving progress to ${DB_FILE}`);
   });

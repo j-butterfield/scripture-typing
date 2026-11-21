@@ -7,4 +7,4 @@
 # Artwork
 
 - **public/art/avatars/**: the family's clay animal avatars, generated with ElevenLabs for the Butterfield Finance app and shared here.
-- **public/art/icons/**, **public/art/welcome.webp** and **public/art/hands.webp**: generated with ElevenLabs for Scripture Typing in the same clay style ("Scripture Typing artwork" flow).
+- **public/art/icons/**, **public/art/welcome.webp** and **public/art/hands.webp**: generated with ElevenLabs for the Butter Typing Trainer in the same clay style ("The Butter Typing Trainer artwork" flow).

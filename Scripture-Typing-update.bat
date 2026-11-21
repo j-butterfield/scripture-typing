@@ -1,13 +1,13 @@
 @echo off
-title Scripture Typing - Update
+title The Butter Typing Trainer - Update
 cd /d "%~dp0"
 
-rem Updates THIS computer's copy of Scripture Typing from GitHub.
+rem Updates THIS computer's copy of the Butter Typing Trainer from GitHub.
 rem To update the copy the kids use on the NAS, run Scripture-Typing-nas-update.bat instead.
 
 echo.
-echo   Fetching the latest Scripture Typing...
-echo   (Close the Scripture Typing server window first if it is running.)
+echo   Fetching the latest Butter Typing Trainer...
+echo   (Close the Butter Typing Trainer server window first if it is running.)
 echo.
 
 where git >nul 2>nul

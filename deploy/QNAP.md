@@ -1,6 +1,6 @@
-# Scripture Typing on the QNAP NAS
+# The Butter Typing Trainer on the QNAP NAS
 
-The kids use Scripture Typing from the NAS at **http://&lt;NAS address&gt;:3316**, on any computer in the house. Everyone's progress is kept in one place on the NAS.
+The kids use the Butter Typing Trainer from the NAS at **http://&lt;NAS address&gt;:3316**, on any computer in the house. Everyone's progress is kept in one place on the NAS.
 
 It's set up the same way as Adventures in Shajun:
 
@@ -35,7 +35,7 @@ If you've already been using `Scripture-Typing-play.bat` on this PC, it offers t
 It starts in a few seconds. To watch it, open **Containers** → **scripture-typing** → **Logs**. It's ready when the log says:
 
 ```
-Scripture Typing Trainer running on http://localhost:8080
+The Butter Typing Trainer running on http://localhost:8080
 Family opens:  http://192.168.1.50:3316
 ```
 

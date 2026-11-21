@@ -51,7 +51,7 @@ test('profiles, results and passages round-trip and persist to disk', async () =
 test('serves the app and blocks path traversal', async () => {
   const res = await fetch(`${base}/`);
   assert.equal(res.status, 200);
-  assert.match(await res.text(), /Scripture Typing/);
+  assert.match(await res.text(), /The Butter Typing Trainer/);
   const bad = await fetch(`${base}/..%2fserver.js`);
   assert.notEqual(bad.status, 200);
 });
