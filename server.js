@@ -5,6 +5,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { loadBible, search as searchBible } from './bible.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -23,6 +24,12 @@ const MIME = {
   '.ico': 'image/x-icon',
   '.webmanifest': 'application/manifest+json',
 };
+
+let bible = null;
+function getBible() {
+  if (!bible) bible = loadBible(path.join(ROOT, 'bible', 'kjv.json'));
+  return bible;
+}
 
 const emptyDb = () => ({ version: 1, profiles: [], results: [], passages: [] });
 
@@ -154,6 +161,7 @@ async function api(req, res, url) {
 
   if (resource === 'health') return send(res, 200, { ok: true });
   if (resource === 'state' && m === 'GET') return send(res, 200, db);
+  if (resource === 'bible' && m === 'GET') return send(res, 200, searchBible(getBible(), url.searchParams.get('q'), url.searchParams.get('mode')));
 
   if (resource === 'profiles') {
     if (m === 'POST' && !itemId) {
@@ -237,6 +245,7 @@ async function serveStatic(req, res, url) {
 
 export async function createServer() {
   await loadDb();
+  try { getBible(); } catch (err) { console.error('Could not load the Bible for search:', err.message); }
   return http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://localhost');

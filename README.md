@@ -9,6 +9,11 @@ A typing tutor for kids that uses Bible passages as the practice text. You host 
   - Animated hands show which finger to use, and a lesson passes at 90% accuracy, which unlocks the next.
   - A **Windows / Mac** switch changes the key names, such as Backspace/delete, Enter/return and Ctrl/⌘ command. Hand placement is the same on both.
 - **Practice.** 61 King James Version passages in three levels: short verses, longer verses and whole passages such as Psalm 23, the Lord's Prayer and the Beatitudes. Each passage earns up to 3 stars.
+- **Search the whole Bible.** In Practice, type a reference or some words to practice any verse:
+  - References can be written many ways: `John 3:16`, `Psalm 23`, `1 Cor 13:4-7`, `First John 4`, `Jude 3`.
+  - Words like `be strong` find every verse containing them, with exact phrases first.
+  - Long passages and whole chapters are split at verse breaks into parts of about 50 words, each labeled with its real verses (`Psalm 23:1-3`). "Next" carries on through the chapter.
+  - The text is the King James Version (1769 standard text), in `bible/kjv.json`. Every verse was checked against four independent digital copies, and the built-in passages match it word for word. Search runs on the NAS server.
 - **America's founding documents.** The Declaration of Independence, the Constitution (Preamble through Article VII) and the Bill of Rights:
   - They are word for word from the National Archives transcripts, with the original spelling, like "defence".
   - They are split into 152 short parts of about 40 words each (never more than about 65), broken at the ends of sentences or clauses and kept in document order.

@@ -10,7 +10,7 @@ const LAST_PROFILE_KEY = 'stt-last-profile';
 const AVATARS = ['🐑', '🦁', '🐻', '🦊', '🐰', '🐼', '🐯', '🐸', '🦉', '🐢', '🐳', '🦋', '🐝', '🐞', '🕊️', '⭐'];
 const COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#c0392b'];
 
-let ui = { profileId: null, collection: 'bible', level: 1, doc: 'declaration', testCollection: 'bible', testLevel: 1, testDoc: 'all', testMinutes: 1 };
+let ui = { profileId: null, collection: 'bible', level: 1, doc: 'declaration', testCollection: 'bible', testLevel: 1, testDoc: 'all', testMinutes: 1, search: null };
 let cleanup = null;
 
 // ---------------- helpers ----------------
@@ -206,6 +206,73 @@ function viewDashboard() {
   on('[data-act="votd"]', () => go(viewTyping, { mode: 'practice', kind: 'passage', passages: [v] }));
 }
 
+// ---------------- Bible search ----------------
+async function bibleSearch(q, mode) {
+  const res = await fetch(`api/bible?q=${encodeURIComponent(q)}${mode ? `&mode=${mode}` : ''}`);
+  if (!res.ok) throw new Error(`search failed (${res.status})`);
+  return res.json();
+}
+const searchedPassage = (part) => ({ id: part.id, ref: part.ref, text: part.text, translation: 'KJV', collection: 'bible', builtIn: true, searched: true });
+// The parts a search found, in order, so "Next" can carry on through a chapter.
+function searchItems(r) { return r?.kind === 'reference' ? r.parts : r?.kind === 'words' ? r.results : []; }
+function practiceSearched(r, index) {
+  const items = searchItems(r);
+  go(viewTyping, { mode: 'practice', kind: 'passage', passages: [searchedPassage(items[index])], search: { result: r, index } });
+}
+
+function renderSearch(s) {
+  const q = ui.search?.q || '';
+  const r = ui.search?.result;
+  const form = `
+    <form class="bsearch" id="bsf" role="search">
+      <input type="search" name="q" value="${esc(q)}" placeholder="Find any verse: John 3:16, Psalm 23, 1 Cor 13:4-7, or words like be strong" aria-label="Find a Bible verse" autocomplete="off" ${store.remote ? '' : 'disabled'}>
+      <button class="primary" type="submit" ${store.remote ? '' : 'disabled'}>🔎 Search</button>
+      ${r || ui.search?.error ? '<button class="ghost" type="button" data-act="clear-search">✕ Clear</button>' : ''}
+    </form>
+    ${store.remote ? '' : '<p class="note center">Searching the whole Bible needs the Scripture Typing server on the NAS.</p>'}`;
+  if (ui.search?.error) return `${form}<p class="note center">${esc(ui.search.error)}</p>`;
+  if (!r) return form;
+  const items = searchItems(r);
+  let head = '';
+  if (r.kind === 'reference') {
+    head = `<h3 class="center">${esc(r.title)} <span class="muted">· ${r.verseCount} verse${r.verseCount > 1 ? 's' : ''}${r.parts.length > 1 ? ` in ${r.parts.length} parts` : ''}</span></h3>
+      ${r.truncated ? '<p class="note center">That is a lot of Scripture! Showing the first 200 verses.</p>' : ''}
+      ${r.parts.length > 1 ? '<p class="note center">Start with part 1. After each part, "Next" carries on to the next one.</p>' : ''}
+      ${r.alsoWords ? `<p class="center"><button class="ghost" data-act="words">Or find verses with the word "${esc(r.alsoWords)}"</button></p>` : ''}`;
+  } else if (r.kind === 'words') {
+    head = r.total
+      ? `<h3 class="center">${r.total} verse${r.total > 1 ? 's' : ''} found${r.total > items.length ? ` <span class="muted">· showing the first ${items.length}. Add more words to narrow it down.</span>` : ''}</h3>`
+      : '<p class="note center">No verses have all of those words. Try fewer words, or a reference like John 3:16.</p>';
+  } else if (r.kind === 'error') {
+    head = `<p class="note center">${esc(r.message)}</p>`;
+  }
+  return `${form}${head}
+    <div class="passages">${items.map((x, i) => `
+      <button class="passage" data-si="${i}">
+        <span class="pref">${esc(x.ref)} <em>${LEVELS[levelFor(x.text)].emoji} ${x.text.split(' ').length} words</em></span>
+        <span class="ptext">${esc(x.text.length > 140 ? `${x.text.slice(0, 140)}…` : x.text)}</span>
+        <span class="stars ${s.stars[x.id] ? '' : 'none'}">${starStr(s.stars[x.id] || 0)}</span>
+      </button>`).join('')}</div>`;
+}
+
+function wireSearch() {
+  const f = $('#bsf');
+  if (!f) return;
+  const run = async (q, mode) => {
+    ui.search = { q, result: null };
+    try {
+      ui.search.result = await bibleSearch(q, mode);
+      if (ui.search.result.kind === 'empty') ui.search = null;
+    } catch (err) { ui.search.error = `Could not search right now (${err.message}).`; }
+    go(viewPractice);
+  };
+  f.addEventListener('submit', (e) => { e.preventDefault(); const q = new FormData(f).get('q').trim(); if (q) run(q); });
+  on('[data-act="clear-search"]', () => { ui.search = null; go(viewPractice); });
+  on('[data-act="words"]', () => run(ui.search.result.alsoWords, 'words'));
+  on('[data-si]', (el) => practiceSearched(ui.search.result, Number(el.dataset.si)));
+  if (!ui.search) f.querySelector('input').focus();
+}
+
 function viewPractice() {
   const p = me();
   if (!p) return go(viewHome);
@@ -219,7 +286,8 @@ function viewPractice() {
     </header>
     <div class="choices collections">${Object.entries(COLLECTIONS).map(([id, c]) => `
       <button class="choice ${id === ui.collection ? 'on' : ''}" data-col="${id}" aria-pressed="${id === ui.collection}">${c.emoji} ${c.name}</button>`).join('')}</div>
-    <div class="tabs" role="tablist">
+    ${bible ? renderSearch(s) : ''}
+    ${bible && ui.search ? '' : `<div class="tabs" role="tablist">
       ${bible ? Object.entries(LEVELS).map(([n, L]) => `
         <button role="tab" class="tab ${Number(n) === ui.level ? 'on' : ''}" data-level="${n}" aria-selected="${Number(n) === ui.level}">
           ${L.emoji} ${L.name}<small>${L.label}</small></button>`).join('')
@@ -229,17 +297,18 @@ function viewPractice() {
         return `<button role="tab" class="tab ${d.id === ui.doc ? 'on' : ''}" data-doc="${d.id}" aria-selected="${d.id === ui.doc}">
           ${d.emoji} ${d.name}<small>${d.year} · ${done} of ${n.length} typed</small></button>`;
       }).join('')}
-    </div>
+    </div>`}
     ${bible ? '' : '<p class="note center">Typed exactly as written, with the original spelling and capital letters (like "defence" and "Union"). Long sections are split into parts.</p>'}
-    <div class="passages">
+    ${bible && ui.search ? '' : `<div class="passages">
       ${list.map((x) => `
         <button class="passage" data-pid="${esc(x.id)}">
           <span class="pref">${esc(bible ? x.ref : x.ref.replace(/^[^:]+: /, ''))}${x.builtIn ? '' : ' <em>family</em>'}${bible ? '' : ` <em>${LEVELS[x.level].emoji} ${Math.round(x.text.length / 6)} words</em>`}</span>
           <span class="ptext">${esc(x.text.length > 110 ? `${x.text.slice(0, 110)}…` : x.text)}</span>
           <span class="stars ${s.stars[x.id] ? '' : 'none'}" aria-label="${s.stars[x.id] || 0} of 3 stars">${starStr(s.stars[x.id] || 0)}</span>
         </button>`).join('') || '<p class="note">No passages at this level yet.</p>'}
-    </div>`;
+    </div>`}`;
   on('[data-act="back"]', () => go(viewDashboard));
+  wireSearch();
   on('[data-level]', (el) => { ui.level = Number(el.dataset.level); go(viewPractice); });
   on('[data-col]', (el) => { ui.collection = el.dataset.col; go(viewPractice); });
   on('[data-doc]', (el) => { ui.doc = el.dataset.doc; go(viewPractice); });
@@ -489,7 +558,14 @@ function viewResults(r, config, newBadges, typedPassages) {
   const group = (x) => (verse.collection === 'founding' ? x.doc === verse.doc : x.collection !== 'founding' && x.level === verse.level);
   const sameLevel = verse ? allPassages().filter(group) : [];
   const idx = verse ? sameLevel.findIndex((x) => x.id === verse.id) : -1;
-  const next = idx >= 0 ? sameLevel[(idx + 1) % sameLevel.length] : null;
+  let next = idx >= 0 ? sameLevel[(idx + 1) % sameLevel.length] : null;
+  // A searched passage carries on through what the search found, then into the following verses.
+  const sr = config.search;
+  const srItems = sr ? searchItems(sr.result) : [];
+  const srRef = sr?.result.kind === 'reference';
+  const srNextPart = sr && srRef && sr.index < srItems.length - 1 ? sr.index + 1 : -1;
+  const srAfter = sr && srRef && srNextPart < 0 ? sr.result.after : null;
+  if (sr) next = null;
 
   app.innerHTML = `
     <header class="top">
@@ -512,6 +588,9 @@ function viewResults(r, config, newBadges, typedPassages) {
       <div class="row center-row">
         <button class="primary" data-act="again">↻ Try again</button>
         ${next ? `<button class="primary alt" data-act="next">Next ${verse?.collection === 'founding' ? 'part' : 'verse'} →</button>` : ''}
+        ${srNextPart >= 0 ? `<button class="primary alt" data-act="snext">Next: ${esc(srItems[srNextPart].ref)} →</button>` : ''}
+        ${srAfter ? `<button class="primary alt" data-act="safter">Keep going: ${esc(srAfter)} →</button>` : ''}
+        ${sr ? '<button class="ghost" data-act="sback">🔎 Back to search</button>' : ''}
         <button class="ghost" data-act="progress">📈 My progress</button>
       </div>
     </section>`;
@@ -523,6 +602,15 @@ function viewResults(r, config, newBadges, typedPassages) {
     go(viewTyping, config);
   });
   on('[data-act="next"]', () => go(viewTyping, { mode: 'practice', kind: 'passage', passages: [next] }));
+  on('[data-act="snext"]', () => practiceSearched(sr.result, srNextPart));
+  on('[data-act="sback"]', () => go(viewPractice));
+  on('[data-act="safter"]', async () => {
+    try {
+      const r = await bibleSearch(srAfter);
+      ui.search = { q: srAfter, result: r };
+      if (searchItems(r).length) practiceSearched(r, 0);
+    } catch (err) { toast(`Could not load ${srAfter} (${err.message}).`); }
+  });
   const keyHandler = (e) => { if (e.key === 'Enter') { e.preventDefault(); $('[data-act="again"]')?.click(); } };
   document.addEventListener('keydown', keyHandler);
   cleanup = () => document.removeEventListener('keydown', keyHandler);
@@ -813,7 +901,7 @@ function viewProgress() {
       <div class="tile"><b>${s.bestWpm || '–'}</b><span>best test speed (WPM)</span></div>
       <div class="tile"><b>${p.settings.goalWpm}</b><span>goal (WPM)</span></div>
       <div class="tile"><b>${s.avgAcc ? `${s.avgAcc}%` : '–'}</b><span>recent accuracy</span></div>
-      <div class="tile"><b>${s.done.size} / ${allPassages().length}</b><span>passages typed</span></div>
+      <div class="tile"><b>${s.done.size}</b><span>passages typed</span></div>
     </div>
     ${tests.length >= 2
       ? `<div class="charts">${lineChart(wpmPts, { title: 'Speed in speed tests (words per minute)', unit: '', min: 0, max: Math.ceil((wpmMax * 1.15) / 5) * 5, goal: p.settings.goalWpm })}
