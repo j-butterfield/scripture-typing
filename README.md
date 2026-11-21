@@ -9,6 +9,10 @@ A typing tutor for kids that uses Bible passages as the practice text. You host 
   - Animated hands show which finger to use, and a lesson passes at 90% accuracy, which unlocks the next.
   - A **Windows / Mac** switch changes the key names, such as Backspace/delete, Enter/return and Ctrl/⌘ command. Hand placement is the same on both.
 - **Practice.** 61 King James Version passages in three levels: short verses, longer verses and whole passages such as Psalm 23, the Lord's Prayer and the Beatitudes. Each passage earns up to 3 stars.
+- **America's founding documents.** The Declaration of Independence, the Constitution (Preamble through Article VII) and the Bill of Rights:
+  - They are word for word from the National Archives transcripts, with the original spelling, like "defence".
+  - They are split into 87 typing-sized parts, kept in document order.
+  - Speed tests can use them too.
 - **Speed tests.** 1, 2, 3 or 5 minute timed tests that measure **speed (WPM)** and **accuracy**.
 - **Keyboard guide.** The on-screen keyboard lights up the next key, color-codes the keys by finger and tells the child which finger to use.
 - **Progress.** Charts of speed and accuracy over time, the keys missed most often, badges, a day streak and a history of recent sessions.

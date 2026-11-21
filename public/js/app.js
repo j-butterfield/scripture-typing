@@ -1,5 +1,5 @@
 import { store } from './store.js';
-import { PASSAGES, LEVELS, levelFor } from './passages.js';
+import { PASSAGES, FOUNDING, FOUNDING_DOCS, COLLECTIONS, LEVELS, levelFor } from './passages.js';
 import { TypingSession, normalizeText, easyText, starsFor, computeStats } from './scoring.js';
 import { renderKeyboard, fingersFor, getOS, setOS, keyNames, escapeHtml as esc } from './keyboard.js';
 import { renderHands } from './hands.js';
@@ -10,7 +10,7 @@ const LAST_PROFILE_KEY = 'stt-last-profile';
 const AVATARS = ['🐑', '🦁', '🐻', '🦊', '🐰', '🐼', '🐯', '🐸', '🦉', '🐢', '🐳', '🦋', '🐝', '🐞', '🕊️', '⭐'];
 const COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#c0392b'];
 
-let ui = { profileId: null, level: 1, testLevel: 1, testMinutes: 1 };
+let ui = { profileId: null, collection: 'bible', level: 1, doc: 'declaration', testCollection: 'bible', testLevel: 1, testDoc: 'all', testMinutes: 1 };
 let cleanup = null;
 
 // ---------------- helpers ----------------
@@ -29,8 +29,8 @@ const dayKey = (d) => { const x = new Date(d); return `${x.getFullYear()}-${x.ge
 const starStr = (n) => '★'.repeat(n) + '☆'.repeat(3 - n);
 
 function allPassages() {
-  const custom = store.customPassages.map((p) => ({ ...p, level: levelFor(normalizeText(p.text)), builtIn: false }));
-  return [...PASSAGES, ...custom];
+  const custom = store.customPassages.map((p) => ({ ...p, level: levelFor(normalizeText(p.text)), builtIn: false, collection: 'bible' }));
+  return [...PASSAGES, ...custom, ...FOUNDING];
 }
 const passageById = (id) => allPassages().find((p) => p.id === id);
 
@@ -93,6 +93,8 @@ const BADGES = [
   { id: 'ten', emoji: '📜', name: 'Scroll Keeper', desc: 'Finish 10 different passages', test: (s) => s.done.size >= 10 },
   { id: 'homerow', emoji: '🏠', name: 'Home Row Hero', desc: 'Pass the home row review lesson', test: (s) => s.lessonsPassed.has('home-review') },
   { id: 'graduate', emoji: '🎓', name: 'Graduate', desc: 'Pass every typing lesson', test: (s) => s.lessonsPassed.size >= LESSONS.length },
+  { id: 'people', emoji: '🏛️', name: 'We the People', desc: 'Type the Preamble to the Constitution', test: (s) => s.done.has('const-preamble') },
+  { id: 'rights', emoji: '⚖️', name: 'Bill of Rights', desc: 'Type all ten amendments of the Bill of Rights', test: (s) => FOUNDING.filter((x) => x.doc === 'bill-of-rights').every((x) => s.done.has(x.id)) },
   { id: 'scholar', emoji: '🏆', name: 'Bible Scholar', desc: 'Finish 30 different passages', test: (s) => s.done.size >= 30 },
 ];
 
@@ -188,7 +190,7 @@ function viewDashboard() {
       </div>
       <div class="menu">
         <button class="menu-btn lessons" data-act="lessons"><span>🖐️</span><b>Lessons</b><small>Learn where your fingers go</small></button>
-        <button class="menu-btn practice" data-act="practice"><span>✏️</span><b>Practice</b><small>Type a Bible verse at your own pace</small></button>
+        <button class="menu-btn practice" data-act="practice"><span>✏️</span><b>Practice</b><small>Bible verses or America's founding documents</small></button>
         <button class="menu-btn test" data-act="test"><span>⏱️</span><b>Speed Test</b><small>See how fast and careful you can type</small></button>
         <button class="menu-btn progress" data-act="progress"><span>📈</span><b>My Progress</b><small>Charts, badges and tricky keys</small></button>
       </div>
@@ -208,27 +210,39 @@ function viewPractice() {
   const p = me();
   if (!p) return go(viewHome);
   const s = summarize(store.resultsFor(p.id));
-  const list = allPassages().filter((x) => x.level === ui.level);
+  const bible = ui.collection === 'bible';
+  const list = allPassages().filter((x) => (bible ? x.collection === 'bible' && x.level === ui.level : x.doc === ui.doc));
   app.innerHTML = `
     <header class="top">
       <button class="ghost" data-act="back">← Back</button>
       <h2>Practice</h2><div></div>
     </header>
+    <div class="choices collections">${Object.entries(COLLECTIONS).map(([id, c]) => `
+      <button class="choice ${id === ui.collection ? 'on' : ''}" data-col="${id}" aria-pressed="${id === ui.collection}">${c.emoji} ${c.name}</button>`).join('')}</div>
     <div class="tabs" role="tablist">
-      ${Object.entries(LEVELS).map(([n, L]) => `
+      ${bible ? Object.entries(LEVELS).map(([n, L]) => `
         <button role="tab" class="tab ${Number(n) === ui.level ? 'on' : ''}" data-level="${n}" aria-selected="${Number(n) === ui.level}">
-          ${L.emoji} ${L.name}<small>${L.label}</small></button>`).join('')}
+          ${L.emoji} ${L.name}<small>${L.label}</small></button>`).join('')
+      : FOUNDING_DOCS.map((d) => {
+        const n = FOUNDING.filter((x) => x.doc === d.id);
+        const done = n.filter((x) => s.stars[x.id]).length;
+        return `<button role="tab" class="tab ${d.id === ui.doc ? 'on' : ''}" data-doc="${d.id}" aria-selected="${d.id === ui.doc}">
+          ${d.emoji} ${d.name}<small>${d.year} · ${done} of ${n.length} typed</small></button>`;
+      }).join('')}
     </div>
+    ${bible ? '' : '<p class="note center">Typed exactly as written, with the original spelling and capital letters (like "defence" and "Union"). Long sections are split into parts.</p>'}
     <div class="passages">
       ${list.map((x) => `
         <button class="passage" data-pid="${esc(x.id)}">
-          <span class="pref">${esc(x.ref)}${x.builtIn ? '' : ' <em>family</em>'}</span>
+          <span class="pref">${esc(bible ? x.ref : x.ref.replace(/^[^:]+: /, ''))}${x.builtIn ? '' : ' <em>family</em>'}${bible ? '' : ` <em>${LEVELS[x.level].emoji} ${Math.round(x.text.length / 6)} words</em>`}</span>
           <span class="ptext">${esc(x.text.length > 110 ? `${x.text.slice(0, 110)}…` : x.text)}</span>
           <span class="stars ${s.stars[x.id] ? '' : 'none'}" aria-label="${s.stars[x.id] || 0} of 3 stars">${starStr(s.stars[x.id] || 0)}</span>
         </button>`).join('') || '<p class="note">No passages at this level yet.</p>'}
     </div>`;
   on('[data-act="back"]', () => go(viewDashboard));
   on('[data-level]', (el) => { ui.level = Number(el.dataset.level); go(viewPractice); });
+  on('[data-col]', (el) => { ui.collection = el.dataset.col; go(viewPractice); });
+  on('[data-doc]', (el) => { ui.doc = el.dataset.doc; go(viewPractice); });
   on('[data-pid]', (el) => go(viewTyping, { mode: 'practice', kind: 'passage', passages: [passageById(el.dataset.pid)] }));
 }
 
@@ -239,18 +253,27 @@ function viewTestSetup() {
       <h2>Speed Test</h2><div></div>
     </header>
     <section class="center narrow">
-      <p class="lead">Type as many verses as you can before the clock runs out. Speed only counts letters you typed correctly, so be careful!</p>
+      <p class="lead">Type as much as you can before the clock runs out. Speed only counts letters you typed correctly, so be careful!</p>
       <h3>How long?</h3>
       <div class="choices">${[1, 2, 3, 5].map((m) => `<button class="choice ${m === ui.testMinutes ? 'on' : ''}" data-min="${m}">${m} min</button>`).join('')}</div>
-      <h3>Which verses?</h3>
-      <div class="choices">${Object.entries(LEVELS).map(([n, L]) => `<button class="choice ${Number(n) === ui.testLevel ? 'on' : ''}" data-tl="${n}">${L.emoji} ${L.label}</button>`).join('')}</div>
+      <h3>What to type?</h3>
+      <div class="choices">${Object.entries(COLLECTIONS).map(([id, c]) => `<button class="choice ${id === ui.testCollection ? 'on' : ''}" data-tc="${id}">${c.emoji} ${c.name}</button>`).join('')}</div>
+      ${ui.testCollection === 'bible'
+        ? `<h3>Which verses?</h3>
+      <div class="choices">${Object.entries(LEVELS).map(([n, L]) => `<button class="choice ${Number(n) === ui.testLevel ? 'on' : ''}" data-tl="${n}">${L.emoji} ${L.label}</button>`).join('')}</div>`
+        : `<h3>Which document?</h3>
+      <div class="choices">${[{ id: 'all', name: 'All three', emoji: '🇺🇸' }, ...FOUNDING_DOCS].map((d) => `<button class="choice ${d.id === ui.testDoc ? 'on' : ''}" data-td="${d.id}">${d.emoji} ${d.name}</button>`).join('')}</div>`}
       <button class="primary huge" data-act="start">Start test</button>
     </section>`;
   on('[data-act="back"]', () => go(viewDashboard));
   on('[data-min]', (el) => { ui.testMinutes = Number(el.dataset.min); go(viewTestSetup); });
   on('[data-tl]', (el) => { ui.testLevel = Number(el.dataset.tl); go(viewTestSetup); });
+  on('[data-tc]', (el) => { ui.testCollection = el.dataset.tc; go(viewTestSetup); });
+  on('[data-td]', (el) => { ui.testDoc = el.dataset.td; go(viewTestSetup); });
   on('[data-act="start"]', () => {
-    const pool = allPassages().filter((x) => x.level === ui.testLevel);
+    const pool = ui.testCollection === 'bible'
+      ? allPassages().filter((x) => x.collection === 'bible' && x.level === ui.testLevel)
+      : FOUNDING.filter((x) => ui.testDoc === 'all' || x.doc === ui.testDoc);
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
     go(viewTyping, { mode: 'test', kind: 'timed', passages: shuffled, seconds: ui.testMinutes * 60, level: ui.testLevel });
   });
@@ -460,8 +483,9 @@ function viewResults(r, config, newBadges, typedPassages) {
 
   const missed = missedKeys([r], 8);
   const verse = !timed ? typedPassages[0] : null;
-  const idx = verse ? allPassages().filter((x) => x.level === verse.level).findIndex((x) => x.id === verse.id) : -1;
-  const sameLevel = verse ? allPassages().filter((x) => x.level === verse.level) : [];
+  const group = (x) => (verse.collection === 'founding' ? x.doc === verse.doc : x.collection !== 'founding' && x.level === verse.level);
+  const sameLevel = verse ? allPassages().filter(group) : [];
+  const idx = verse ? sameLevel.findIndex((x) => x.id === verse.id) : -1;
   const next = idx >= 0 ? sameLevel[(idx + 1) % sameLevel.length] : null;
 
   app.innerHTML = `
@@ -481,10 +505,10 @@ function viewResults(r, config, newBadges, typedPassages) {
       ${newBadges.length ? `<div class="newbadges">${newBadges.map((b) => `<div class="badge got"><span>${b.emoji}</span><b>New badge: ${esc(b.name)}</b><small>${esc(b.desc)}</small></div>`).join('')}</div>` : ''}
       ${missed.length ? `<div class="missed"><h3>Keys to practice</h3><div class="keycaps">${missed.map(([k, n]) => `<span class="keycap">${esc(keyLabel(k))}<small>×${n}</small></span>`).join('')}</div></div>` : ''}
       ${verse ? `<blockquote class="votd"><p>${esc(verse.text)}</p><cite>${esc(verse.ref)}${verse.translation ? ` (${esc(verse.translation)})` : ''}</cite></blockquote>`
-        : `<p class="note">Verses typed: ${esc(r.refs)}</p>`}
+        : `<p class="note">You typed: ${esc(r.refs)}</p>`}
       <div class="row center-row">
         <button class="primary" data-act="again">↻ Try again</button>
-        ${next ? `<button class="primary alt" data-act="next">Next verse →</button>` : ''}
+        ${next ? `<button class="primary alt" data-act="next">Next ${verse?.collection === 'founding' ? 'part' : 'verse'} →</button>` : ''}
         <button class="ghost" data-act="progress">📈 My progress</button>
       </div>
     </section>`;
@@ -923,7 +947,7 @@ function viewParent() {
         <li><b>Speed (WPM)</b> = correctly typed characters ÷ 5 ÷ minutes. Every 5 characters, including spaces, count as one word. Mistakes left in do not count.</li>
         <li><b>Accuracy</b> = the share of key presses that were right. A mistake still counts even if it is fixed with Backspace.</li>
         <li><b>Stars</b> on a passage: 1 for finishing, 2 for 90%+ accuracy, 3 for 97%+.</li>
-        <li>Built-in verses are from the King James Version (public domain).</li>
+        <li>Built-in verses are from the King James Version (public domain). The Declaration of Independence, Constitution and Bill of Rights are word for word from the National Archives transcripts, with their original spelling.</li>
       </ul>
     </section>`;
   on('[data-act="home"]', () => go(viewHome));

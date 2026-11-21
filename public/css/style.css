@@ -365,3 +365,5 @@ legend { font-weight: 700; margin-bottom: 8px; }
   .hands-wrap { display: none; }
   .top .os-toggle button { padding: 4px 8px; font-size: 0.85rem; }
 }
+.choices.collections { margin-bottom: 14px; }
+.pref em { white-space: nowrap; }

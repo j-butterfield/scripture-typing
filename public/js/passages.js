@@ -1,3 +1,5 @@
+import { FOUNDING_TEXT, FOUNDING_DOCS } from './founding-text.js';
+
 // Built-in passages from the King James Version (public domain).
 // Level is worked out from length: 1 = short verse, 2 = a verse or two, 3 = a full passage.
 // Parents can add more passages (any translation) from the Parent page in the app.
@@ -78,6 +80,18 @@ export const LEVELS = {
   3: { name: 'Level 3', label: 'Whole passages', emoji: '🌳' },
 };
 
+export const COLLECTIONS = {
+  bible: { name: 'Bible', emoji: '📖' },
+  founding: { name: 'Founding Documents', emoji: '🇺🇸' },
+};
+export { FOUNDING_DOCS };
+
+// Bible passages (the verse of the day comes only from these).
 export const PASSAGES = RAW.map(([id, ref, text]) => ({
-  id, ref, text, level: levelFor(text), translation: 'KJV', builtIn: true,
+  id, ref, text, level: levelFor(text), translation: 'KJV', builtIn: true, collection: 'bible',
+}));
+
+// The Declaration of Independence, the Constitution and the Bill of Rights, in document order.
+export const FOUNDING = FOUNDING_TEXT.map(([id, doc, ref, text]) => ({
+  id, doc, ref, text, level: levelFor(text), translation: '', builtIn: true, collection: 'founding',
 }));
