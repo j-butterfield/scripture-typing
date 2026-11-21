@@ -17,13 +17,19 @@ export function renderHands(container) {
     </g>`).join('');
   container.innerHTML = `
     <svg class="hands" viewBox="0 0 562 230" role="img" aria-label="Hands on the home row">
-      <rect x="44" y="118" width="178" height="100" rx="40" class="palm"/>
-      <rect x="340" y="118" width="178" height="100" rx="40" class="palm"/>
-      <g class="finger" data-f="T"><rect x="226" y="118" width="${W}" height="78" rx="17" class="fill-T" transform="rotate(-40 243 157)"/>
-        <rect x="302" y="118" width="${W}" height="78" rx="17" class="fill-T" transform="rotate(40 319 157)"/></g>
+      <!-- Each thumb grows from the lower inner corner of its palm and angles up toward the
+           middle, resting on the space bar. Drawn before the palms so the bases tuck under them. -->
+      <g class="finger" data-f="T">
+        <rect x="-12" y="-18" width="97" height="36" rx="18" class="fill-T" transform="translate(206 192) rotate(-48)"/>
+        <rect x="-85" y="-18" width="97" height="36" rx="18" class="fill-T" transform="translate(356 192) rotate(48)"/>
+        <circle cx="251" cy="142" r="9" class="tipdot"/>
+        <circle cx="311" cy="142" r="9" class="tipdot"/>
+      </g>
+      <path d="M44,142 Q44,118 68,118 L198,118 Q222,118 222,142 L214,198 Q210,226 182,226 L88,226 Q58,226 54,198 Z" class="palm"/>
+      <path d="M518,142 Q518,118 494,118 L364,118 Q340,118 340,142 L348,198 Q352,226 380,226 L474,226 Q504,226 508,198 Z" class="palm"/>
       ${fingers}
-      <text x="133" y="190" text-anchor="middle" class="handlabel">left hand</text>
-      <text x="429" y="190" text-anchor="middle" class="handlabel">right hand</text>
+      <text x="133" y="196" text-anchor="middle" class="handlabel">left hand</text>
+      <text x="429" y="196" text-anchor="middle" class="handlabel">right hand</text>
     </svg>`;
   const svg = container.querySelector('svg');
   return {
