@@ -419,3 +419,67 @@ img.art-icon.sm { width: 28px; height: 28px; border-radius: 8px; vertical-align:
 .menu-btn.lessons { display: flex; gap: 6px; }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand img.art-icon { width: 40px; height: 40px; border-radius: 12px; }
+
+/* ---------- clay keyboard (matches the clay artwork) ---------- */
+:root { --kb-base: #f3ebdc; --kb-base-edge: #e4d8c3; --kb-hi: rgba(255, 255, 255, 0.7); --kb-lo: rgba(90, 60, 20, 0.12); --kb-drop: rgba(90, 60, 20, 0.2); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --kb-base: #2b2925; --kb-base-edge: #1f1d1a; --kb-hi: rgba(255, 255, 255, 0.12); --kb-lo: rgba(0, 0, 0, 0.3); --kb-drop: rgba(0, 0, 0, 0.45); }
+}
+:root[data-theme="dark"] { --kb-base: #2b2925; --kb-base-edge: #1f1d1a; --kb-hi: rgba(255, 255, 255, 0.12); --kb-lo: rgba(0, 0, 0, 0.3); --kb-drop: rgba(0, 0, 0, 0.45); }
+.kb {
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--kb-base) 85%, white), var(--kb-base));
+  padding: 14px 16px 16px; border-radius: 26px; gap: 7px;
+  box-shadow: inset 0 2px 0 var(--kb-hi), inset 0 -6px 0 var(--kb-base-edge), 0 12px 26px var(--kb-drop);
+}
+.kb-row { gap: 7px; }
+.kb-key {
+  border: 0; border-radius: 13px; font-weight: 700;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%);
+  box-shadow: inset 0 2px 1px var(--kb-hi), inset 0 -4px 0 var(--kb-lo), 0 3px 5px var(--kb-drop);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.k-mod { background-color: color-mix(in srgb, var(--kb-base) 70%, var(--surface-2)); }
+.kb-key.next {
+  transform: translateY(-4px) scale(1.07);
+  box-shadow: inset 0 2px 1px var(--kb-hi), inset 0 -4px 0 var(--kb-lo), 0 0 0 3px var(--cursor), 0 10px 16px var(--kb-drop);
+  z-index: 1;
+}
+.kb-key.press { transform: translateY(2px) scale(0.97); box-shadow: inset 0 2px 3px var(--kb-lo), 0 1px 2px var(--kb-drop); }
+.kb-key.marked { outline: none; box-shadow: inset 0 2px 1px var(--kb-hi), inset 0 -4px 0 var(--kb-lo), 0 0 0 3px var(--primary), 0 3px 5px var(--kb-drop); }
+.kb-key.bump::after { opacity: 0.45; }
+@media (prefers-reduced-motion: reduce) { .kb-key.next { transform: none; } }
+
+/* ---------- clay hands ---------- */
+.hands-art { position: relative; width: min(440px, 100%); aspect-ratio: 1.594; margin: 0 auto; }
+.hands-art img { width: 100%; height: 100%; display: block; user-select: none; }
+.hands-art .tip {
+  position: absolute; transform: translate(-50%, -50%); width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 2px 1px rgba(255, 255, 255, 0.6), inset 0 -3px 0 rgba(90, 60, 20, 0.12), 0 2px 4px rgba(90, 60, 20, 0.25);
+  transition: width 0.15s, height 0.15s, background-color 0.15s;
+}
+.hands-art .tip b { font: 800 12px var(--mono); color: #3a352c; }
+.hands-art .tip b.small { font: 800 10px var(--font); }
+.hands-art .tip.f-T { width: 18px; height: 18px; }
+.hands-art .tip.on {
+  width: 44px; height: 44px; background: var(--cursor); border-color: #fff; z-index: 2;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--cursor) 30%, transparent), 0 6px 12px rgba(0, 0, 0, 0.25);
+  animation: tip-pulse 1.2s ease-in-out infinite;
+}
+.hands-art .tip.on b { color: #fff; font-size: 17px; }
+.hands-art .tip.on b.small { font-size: 10px; }
+@keyframes tip-pulse { 50% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--cursor) 18%, transparent), 0 6px 12px rgba(0, 0, 0, 0.25); } }
+.hands-art .tip.f-L1 { background-color: var(--f-L1); } .hands-art .tip.f-L2 { background-color: var(--f-L2); }
+.hands-art .tip.f-L3 { background-color: var(--f-L3); } .hands-art .tip.f-L4 { background-color: var(--f-L4); }
+.hands-art .tip.f-R4 { background-color: var(--f-R4); } .hands-art .tip.f-R3 { background-color: var(--f-R3); }
+.hands-art .tip.f-R2 { background-color: var(--f-R2); } .hands-art .tip.f-R1 { background-color: var(--f-R1); }
+.hands-art .tip.f-T { background-color: var(--f-T); }
+.hands-art .tip.on { background-color: var(--cursor); }
+@media (prefers-reduced-motion: reduce) { .hands-art .tip.on { animation: none; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hands-art .tip:not(.on) b { color: #f0efec; } }
+:root[data-theme="dark"] .hands-art .tip:not(.on) b { color: #f0efec; }
+/* all ten lit at once (the posture lesson): a little smaller so they don't crowd */
+.hands-art.many .tip.on { width: 34px; height: 34px; }
+.hands-art.many .tip.on b { font-size: 14px; }
+.hands-art.many .tip.on b.small { font-size: 9px; }

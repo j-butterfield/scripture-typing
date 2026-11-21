@@ -100,6 +100,15 @@ export function renderKeyboard(container, { os = getOS(), mark = [] } = {}) {
   container.replaceChildren(wrap, hint);
 
   return {
+    // A quick press-down bounce on the key that was just typed.
+    press(ch) {
+      if (ch === undefined) return;
+      const { key } = keyFor(ch);
+      const el = wrap.querySelector(`[data-key="${CSS.escape(key)}"]`);
+      if (!el) return;
+      el.classList.add('press');
+      setTimeout(() => el.classList.remove('press'), 110);
+    },
     highlight(ch) {
       wrap.querySelectorAll('.next').forEach((el) => el.classList.remove('next'));
       if (ch === undefined) { hint.textContent = ''; return; }

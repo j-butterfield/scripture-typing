@@ -451,7 +451,7 @@ function viewTyping(config) {
   }
   tx.appendChild(frag);
 
-  const kb = showKb ? renderKeyboard($('#kb')) : { highlight() {} };
+  const kb = showKb ? renderKeyboard($('#kb')) : { highlight() {}, press() {} };
   const hands = lesson ? renderHands($('#hands')) : { show() {} };
   const tb = $('#tb');
   const refEl = $('#ref');
@@ -515,6 +515,7 @@ function viewTyping(config) {
     const pos = session.position;
     const result = session.input(e.key);
     if (result === 'ignored') return;
+    kb.press(e.key);
     if (!ticker) {
       $('#hint').textContent = st.stopOnError ? 'If a letter shakes, look for the right key.' : `Made a mistake? Use ${keyNames().erase} to fix it.`;
       ticker = setInterval(tick, 200);
