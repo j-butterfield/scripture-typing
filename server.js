@@ -253,9 +253,28 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const server = await createServer();
   server.listen(PORT, () => {
     console.log(`Scripture Typing Trainer running on http://localhost:${PORT}`);
+    if (process.env.PUBLIC_URL) console.log(`Family opens:  ${process.env.PUBLIC_URL}`);
     console.log(`Saving progress to ${DB_FILE}`);
   });
   const stop = () => writeChain.finally(() => process.exit(0));
   process.on('SIGTERM', stop);
   process.on('SIGINT', stop);
+
+  // On the NAS: Scripture-Typing-nas-update.bat copies the new version over and leaves a
+  // note (RESTART_FILE). Finding it, the server saves and exits, and Container Station
+  // ("restart: unless-stopped") starts it straight back up on the new files.
+  if (process.env.RESTART_FILE) {
+    const marker = path.resolve(ROOT, process.env.RESTART_FILE);
+    // Files made here stay writable by the NAS administrators group, so they can be tidied over the network.
+    try { process.umask(0o002); } catch { /* not supported on this system */ }
+    // A note already waiting is from an update copied while the app was stopped: this start is already on it.
+    await fs.unlink(marker).catch(() => {});
+    setInterval(async () => {
+      try { await fs.access(marker); } catch { return; }
+      await fs.unlink(marker).catch(() => {});
+      console.log('An update was copied over - restarting onto it...');
+      server.close();
+      stop();
+    }, 3000).unref();
+  }
 }

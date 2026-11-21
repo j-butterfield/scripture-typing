@@ -1,0 +1,34 @@
+# Scripture Typing on the QNAP NAS, as a Container Station application.
+#
+# Paste all of this into Container Station > Create > Create Application (deploy/QNAP.md walks through it).
+# Run Scripture-Typing-nas-update.bat on the family PC FIRST: it copies the app into the folders below, and
+# this application only runs what is already there. Nothing is built on the NAS; it uses the official Node
+# image (the same one Adventures in Shajun uses, so the NAS already has it).
+#
+# Change one line before you press Create:
+#   PUBLIC_URL  the address the family opens, so the log shows it (the NAS's IP address and port 3316)
+
+services:
+  scripture-typing:
+    image: node:24-alpine
+    container_name: scripture-typing
+    restart: unless-stopped
+    working_dir: /app
+    command: ["node", "server.js"]
+    ports:
+      # http://<your NAS>:3316 (as in John 3:16). QTS has 8080 and Shajun has 7777, so only the
+      # left-hand number may change, if 3316 is ever taken (and PUBLIC_URL's port with it).
+      - "3316:8080"
+    environment:
+      - PUBLIC_URL=http://NAS-ADDRESS:3316
+      - DATA_DIR=/data
+      - RESTART_FILE=/app/.update-ready
+    volumes:
+      - /share/Container/scripture-typing/app:/app
+      - /share/Container/scripture-typing/data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/api/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s

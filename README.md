@@ -22,17 +22,27 @@ A typing tutor for kids that uses Bible passages as the practice text. You host 
 | Accuracy | correct key presses ÷ all key presses. A mistake still counts after it is fixed with Backspace. |
 | Stars | 1 for finishing a passage, 2 for 90%+ accuracy, 3 for 97%+ |
 
-## Install on a NAS (Docker)
+## The double-click files (Windows)
 
-Most NAS systems can run Docker Compose: Synology Container Manager, QNAP Container Station, Unraid, TrueNAS SCALE and OpenMediaVault.
+| File | What it does |
+|---|---|
+| `Scripture-Typing-nas-update.bat` | Pulls the latest version and copies it to the QNAP NAS. The app there then restarts itself onto it. |
+| `Scripture-Typing-update.bat` | Pulls the latest version into this computer's copy only. |
+| `Scripture-Typing-play.bat` | Runs a copy on this computer at http://localhost:8080. |
 
-1. Copy this `typing-trainer` folder to your NAS, e.g. `/volume1/docker/typing-trainer`.
-2. Create a project from the `docker-compose.yml` in that folder:
-   - **Synology:** Container Manager → Project → Create, then choose that folder.
-   - **SSH:** run `docker compose up -d --build` in that folder.
-3. Open `http://<your-nas-ip>:8080` on the kids' computers. Bookmark it.
+## Install on the QNAP NAS
 
-Progress is saved in `data/db.json` inside the folder, so include that folder in your NAS backups. To use a port other than 8080, change the left number in `docker-compose.yml`, e.g. `"3000:8080"`.
+Follow **[deploy/QNAP.md](deploy/QNAP.md)**. In short:
+
+1. Run `Scripture-Typing-nas-update.bat`.
+2. Paste `deploy/qnap/docker-compose.yml` into Container Station.
+3. Open `http://<NAS address>:3316`.
+
+The kids' progress lives in `Container\scripture-typing\data\db.json` on the NAS.
+
+### Other NAS systems
+
+The `Dockerfile` and `docker-compose.yml` at the top of this repo build an image instead. Run `docker compose up -d --build` in this folder, then open `http://<your-nas-ip>:8080`. Progress is saved in `data/db.json`.
 
 ## Run without Docker
 

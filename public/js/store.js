@@ -7,11 +7,21 @@ const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) 
 const empty = () => ({ version: 1, profiles: [], results: [], passages: [] });
 
 async function http(method, url, body) {
-  const res = await fetch(url, {
-    method,
-    headers: body ? { 'Content-Type': 'application/json' } : {},
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  // The server restarts for a few seconds after a NAS update, so a dropped connection is retried.
+  let res;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      res = await fetch(url, {
+        method,
+        headers: body ? { 'Content-Type': 'application/json' } : {},
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      break;
+    } catch {
+      if (attempt >= 4) throw new Error('could not reach the server');
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  }
   if (!res.ok) {
     let msg = `${res.status}`;
     try { msg = (await res.json()).error || msg; } catch { /* ignore */ }
