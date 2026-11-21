@@ -48,20 +48,36 @@ function verseOfDay() {
   return pool[day % pool.length];
 }
 
+// ---- sounds: a soft "bonk" on a wrong key, a little chime when a passage or lesson is done ----
 let audio;
-function beep() {
-  if (!me()?.settings.sound) return;
-  try {
-    audio ??= new AudioContext();
-    const o = audio.createOscillator();
-    const g = audio.createGain();
-    o.frequency.value = 200;
-    g.gain.value = 0.06;
-    o.connect(g).connect(audio.destination);
-    o.start();
-    o.stop(audio.currentTime + 0.08);
-  } catch { /* no audio */ }
+function audioCtx() {
+  audio ??= new (window.AudioContext || window.webkitAudioContext)();
+  // Browsers start page audio paused; it may only start after the child has pressed a key or clicked.
+  if (audio.state === 'suspended') audio.resume();
+  return audio;
 }
+function tone(freq, at, dur, type = 'triangle', vol = 0.3) {
+  const a = audioCtx();
+  const t = a.currentTime + at;
+  const o = a.createOscillator();
+  const g = a.createGain();
+  o.type = type;
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(a.destination);
+  o.start(t);
+  o.stop(t + dur + 0.05);
+}
+function playSound(kind, always = false) {
+  if (!always && !me()?.settings.sound) return;
+  try {
+    if (kind === 'mistake') { tone(330, 0, 0.12, 'square', 0.12); tone(247, 0.07, 0.16, 'square', 0.12); }
+    if (kind === 'done') [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.1, 0.3, 'triangle', 0.25));
+  } catch { /* this browser has no sound */ }
+}
+const beep = () => playSound('mistake');
 
 function celebrate() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -594,6 +610,7 @@ function viewResults(r, config, newBadges, typedPassages) {
         <button class="ghost" data-act="progress">📈 My progress</button>
       </div>
     </section>`;
+  playSound('done');
   if (stars === 3 || newBadges.length) celebrate();
   on('[data-act="menu"]', () => go(viewDashboard));
   on('[data-act="progress"]', () => go(viewProgress));
@@ -801,7 +818,7 @@ function viewLessonResults(index, stats, passed, newBadges, missed) {
         <button class="${passed && next ? 'ghost' : 'primary'}" data-act="again">↻ ${passed ? 'Do it again' : 'Try again'}</button>
       </div>
     </section>`;
-  if (passed) celebrate();
+  if (passed) { playSound('done'); celebrate(); }
   on('[data-act="lessons"]', () => go(viewLessons));
   on('[data-act="next"]', () => go(viewLessonIntro, index + 1));
   on('[data-act="again"]', () => go(viewLessonIntro, index));
@@ -953,7 +970,8 @@ function viewProfileEditor(profileId, back) {
         <label class="check"><input type="checkbox" name="stopOnError" ${st.stopOnError ? 'checked' : ''}> <span><b>Wait for the right key</b> - the cursor will not move on until the correct key is pressed. Turn off for older kids, who will then use Backspace to fix mistakes.</span></label>
         <label class="check"><input type="checkbox" name="showKeyboard" ${st.showKeyboard ? 'checked' : ''}> <span><b>Show keyboard guide</b> - lights up the next key and which finger to use.</span></label>
         <label class="check"><input type="checkbox" name="unlockLessons" ${st.unlockLessons ? 'checked' : ''}> <span><b>Unlock all lessons</b> - normally each lesson opens once the one before it is passed with ${PASS_ACCURACY}% accuracy.</span></label>
-        <label class="check"><input type="checkbox" name="sound" ${st.sound ? 'checked' : ''}> <span><b>Sound on mistakes</b> - a soft beep when a wrong key is pressed.</span></label>
+        <label class="check"><input type="checkbox" name="sound" ${st.sound ? 'checked' : ''}> <span><b>Sounds</b> - a soft "bonk" when a wrong key is pressed, and a happy chime when a passage or lesson is finished.
+          <button class="ghost small-btn" type="button" data-act="test-sound">🔊 Test sound</button></span></label>
         <label>Speed goal (words per minute) <input name="goalWpm" type="number" min="1" max="200" value="${st.goalWpm}"></label>
         <p class="note">Rough guide: ages 7-8 aim for 10-15 WPM, ages 9-11 for 15-25, teens 30-40+.</p>
       </fieldset>
@@ -963,6 +981,7 @@ function viewProfileEditor(profileId, back) {
       </div>
     </form>`;
   on('[data-act="back"]', () => go(back || viewParent));
+  on('[data-act="test-sound"]', (el, e) => { e.preventDefault(); playSound('done', true); setTimeout(() => playSound('mistake', true), 700); });
   $('#pf').addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = new FormData(e.target);

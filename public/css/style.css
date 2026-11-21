@@ -373,3 +373,4 @@ legend { font-weight: 700; margin-bottom: 8px; }
   border: 2px solid var(--border); background: var(--surface); color: var(--text);
 }
 .bsearch input:focus { outline: none; border-color: var(--primary); }
+.small-btn { padding: 4px 10px; font-size: 0.85rem; margin-left: 6px; }
