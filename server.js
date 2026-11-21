@@ -69,6 +69,7 @@ function cleanSettings(s = {}) {
     stopOnError: s.stopOnError === undefined ? true : Boolean(s.stopOnError),
     showKeyboard: s.showKeyboard === undefined ? true : Boolean(s.showKeyboard),
     sound: Boolean(s.sound),
+    unlockLessons: Boolean(s.unlockLessons),
     goalWpm: num(s.goalWpm ?? 20, 1, 200),
   };
 }
@@ -95,8 +96,8 @@ function cleanResult(b) {
     id: id(),
     profileId: str(b.profileId, 64),
     date: new Date().toISOString(),
-    mode: b.mode === 'test' ? 'test' : 'practice',
-    kind: ['timed', 'passage'].includes(b.kind) ? b.kind : 'passage',
+    mode: ['test', 'lesson'].includes(b.mode) ? b.mode : 'practice',
+    kind: ['timed', 'passage', 'lesson'].includes(b.kind) ? b.kind : 'passage',
     passageIds: Array.isArray(b.passageIds) ? b.passageIds.slice(0, 50).map((x) => str(x, 64)) : [],
     refs: str(b.refs, 300),
     completed: Boolean(b.completed),

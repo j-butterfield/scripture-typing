@@ -2,6 +2,12 @@
 
 A typing tutor for kids that uses Bible passages as the practice text. You host it on your home NAS, and every computer in the house shares the same progress.
 
+- **Lessons.** 21 step-by-step lessons that teach touch typing:
+  - It starts with posture (sitting, floating wrists, curved fingers, home row and the F/J bumps).
+  - Then come the home row, top row and bottom row, a key or two at a time, then capitals and punctuation, ending with a whole verse.
+  - Each key is drilled reaching from its home key and back, then mixed with keys already learned, then used in real words and Bible phrases.
+  - Animated hands show which finger to use, and a lesson passes at 90% accuracy, which unlocks the next.
+  - A **Windows / Mac** switch changes the key names, such as Backspace/delete, Enter/return and Ctrl/⌘ command. Hand placement is the same on both.
 - **Practice.** 61 King James Version passages in three levels: short verses, longer verses and whole passages such as Psalm 23, the Lord's Prayer and the Beatitudes. Each passage earns up to 3 stars.
 - **Speed tests.** 1, 2, 3 or 5 minute timed tests that measure **speed (WPM)** and **accuracy**.
 - **Keyboard guide.** The on-screen keyboard lights up the next key, color-codes the keys by finger and tells the child which finger to use.

@@ -1,7 +1,9 @@
 import { store } from './store.js';
 import { PASSAGES, LEVELS, levelFor } from './passages.js';
-import { TypingSession, normalizeText, easyText, starsFor } from './scoring.js';
-import { renderKeyboard, escapeHtml as esc } from './keyboard.js';
+import { TypingSession, normalizeText, easyText, starsFor, computeStats } from './scoring.js';
+import { renderKeyboard, fingersFor, getOS, setOS, keyNames, escapeHtml as esc } from './keyboard.js';
+import { renderHands } from './hands.js';
+import { LESSONS, UNITS, POSTURE, PASS_ACCURACY, buildExercises, lessonGuide, fingerOf } from './lessons.js';
 
 const app = document.getElementById('app');
 const LAST_PROFILE_KEY = 'stt-last-profile';
@@ -89,6 +91,8 @@ const BADGES = [
   { id: 'shepherd', emoji: '🐑', name: 'Good Shepherd', desc: 'Type all of Psalm 23', test: (s) => s.done.has('psalm-23') },
   { id: 'prayer', emoji: '🙏', name: "The Lord's Prayer", desc: 'Type Matthew 6:9-13', test: (s) => s.done.has('matthew-6-9-13') },
   { id: 'ten', emoji: '📜', name: 'Scroll Keeper', desc: 'Finish 10 different passages', test: (s) => s.done.size >= 10 },
+  { id: 'homerow', emoji: '🏠', name: 'Home Row Hero', desc: 'Pass the home row review lesson', test: (s) => s.lessonsPassed.has('home-review') },
+  { id: 'graduate', emoji: '🎓', name: 'Graduate', desc: 'Pass every typing lesson', test: (s) => s.lessonsPassed.size >= LESSONS.length },
   { id: 'scholar', emoji: '🏆', name: 'Bible Scholar', desc: 'Finish 30 different passages', test: (s) => s.done.size >= 30 },
 ];
 
@@ -109,6 +113,9 @@ function summarize(results) {
     done,
     stars: best,
     completedCount: completed.length,
+    lessonsPassed: new Set(results.filter((r) => r.mode === 'lesson' && r.completed).flatMap((r) => r.passageIds)),
+    lessonStars: Object.fromEntries(results.filter((r) => r.mode === 'lesson' && r.completed)
+      .map((r) => [r.passageIds[0], starsFor(r.accuracy)]).sort((a, b) => a[1] - b[1])),
     bestWpm: Math.max(0, ...tests.map((r) => r.wpm)),
     bestTestAcc: Math.max(0, ...tests.map((r) => r.accuracy)),
     avgAcc: recent.length ? Math.round(recent.reduce((a, r) => a + r.accuracy, 0) / recent.length) : 0,
@@ -177,9 +184,10 @@ function viewDashboard() {
         <div class="tile"><b>${s.bestWpm || '–'}</b><span>best speed (WPM)</span></div>
         <div class="tile"><b>${s.avgAcc ? `${s.avgAcc}%` : '–'}</b><span>recent accuracy</span></div>
         <div class="tile"><b>${s.streak}${s.streak ? ' 🔥' : ''}</b><span>day streak</span></div>
-        <div class="tile"><b>${s.done.size}</b><span>passages typed</span></div>
+        <div class="tile"><b>${s.lessonsPassed.size} / ${LESSONS.length}</b><span>lessons passed</span></div>
       </div>
       <div class="menu">
+        <button class="menu-btn lessons" data-act="lessons"><span>🖐️</span><b>Lessons</b><small>Learn where your fingers go</small></button>
         <button class="menu-btn practice" data-act="practice"><span>✏️</span><b>Practice</b><small>Type a Bible verse at your own pace</small></button>
         <button class="menu-btn test" data-act="test"><span>⏱️</span><b>Speed Test</b><small>See how fast and careful you can type</small></button>
         <button class="menu-btn progress" data-act="progress"><span>📈</span><b>My Progress</b><small>Charts, badges and tricky keys</small></button>
@@ -192,6 +200,7 @@ function viewDashboard() {
   on('[data-act="practice"]', () => go(viewPractice));
   on('[data-act="test"]', () => go(viewTestSetup));
   on('[data-act="progress"]', () => go(viewProgress));
+  on('[data-act="lessons"]', () => go(viewLessons));
   on('[data-act="votd"]', () => go(viewTyping, { mode: 'practice', kind: 'passage', passages: [v] }));
 }
 
@@ -268,17 +277,26 @@ function buildText(passages, easy, minLength) {
 
 function viewTyping(config) {
   const p = me();
-  if (!p || !config.passages?.length || !config.passages[0]) return go(viewDashboard);
+  const lesson = config.kind === 'lesson' ? LESSONS[config.index] : null;
+  if (!p || (!lesson && (!config.passages?.length || !config.passages[0]))) return go(viewDashboard);
   const st = p.settings;
   const timed = config.kind === 'timed';
-  const { text, segs } = buildText(config.passages, st.easyMode, timed ? 4000 : 0);
+  let text, segs;
+  if (lesson) {
+    const ex = config.exercises[config.step];
+    text = ex.text;
+    segs = [{ start: 0, p: { id: lesson.id, ref: `${lesson.title} · ${config.step + 1} of ${config.exercises.length}: ${ex.title}` } }];
+  } else {
+    ({ text, segs } = buildText(config.passages, st.easyMode, timed ? 4000 : 0));
+  }
+  const showKb = st.showKeyboard || !!lesson;
   const session = new TypingSession(text, { stopOnError: st.stopOnError });
 
   app.innerHTML = `
     <header class="top">
       <button class="ghost" data-act="quit">← Back</button>
       <div class="ref" id="ref"></div>
-      <span class="mode-pill">${timed ? `⏱️ ${config.seconds / 60} min test` : '✏️ Practice'}${st.easyMode ? ' · easy' : ''}</span>
+      <span class="mode-pill">${lesson ? '🖐️ Lesson' : timed ? `⏱️ ${config.seconds / 60} min test` : '✏️ Practice'}${st.easyMode && !lesson ? ' · easy' : ''}</span>
     </header>
     <div class="live">
       <div class="tile"><b id="lw">–</b><span>words / min</span></div>
@@ -289,7 +307,8 @@ function viewTyping(config) {
     <div class="textbox" id="tb"><div class="text" id="tx"></div></div>
     <p class="hint" id="hint">Start typing when you are ready. The clock starts with your first key.</p>
     <p class="warn" id="caps" hidden>⚠️ Caps Lock is on</p>
-    <div id="kb" ${st.showKeyboard ? '' : 'hidden'}></div>
+    <div id="kb" ${showKb ? '' : 'hidden'}></div>
+    ${lesson ? '<div id="hands" class="hands-wrap"></div>' : ''}
     <div class="row center-row"><button class="ghost" data-act="restart">↻ Start over</button></div>`;
 
   // Render characters, grouped into words so lines only break between words.
@@ -314,7 +333,8 @@ function viewTyping(config) {
   }
   tx.appendChild(frag);
 
-  const kb = st.showKeyboard ? renderKeyboard($('#kb')) : { highlight() {} };
+  const kb = showKb ? renderKeyboard($('#kb')) : { highlight() {} };
+  const hands = lesson ? renderHands($('#hands')) : { show() {} };
   const tb = $('#tb');
   const refEl = $('#ref');
   let shownRef = null;
@@ -333,6 +353,7 @@ function viewTyping(config) {
     const target = Math.max(0, cur.offsetTop - lh);
     if (Math.abs(tb.scrollTop - target) > 2) tb.scrollTo({ top: target, behavior: 'smooth' });
     kb.highlight(text[pos]);
+    hands.show(fingersFor(text[pos]));
     let seg = segs[0];
     for (const sg of segs) if (sg.start <= pos) seg = sg;
     if (seg !== shownRef) { shownRef = seg; refEl.textContent = seg.p.ref; }
@@ -373,7 +394,7 @@ function viewTyping(config) {
     const result = session.input(e.key);
     if (result === 'ignored') return;
     if (!ticker) {
-      $('#hint').textContent = st.stopOnError ? 'If a letter shakes, look for the right key.' : 'Made a mistake? Use Backspace to fix it.';
+      $('#hint').textContent = st.stopOnError ? 'If a letter shakes, look for the right key.' : `Made a mistake? Use ${keyNames().erase} to fix it.`;
       ticker = setInterval(tick, 200);
     }
     if (result === 'blocked') {
@@ -394,6 +415,7 @@ function viewTyping(config) {
   async function finish() {
     clearInterval(ticker);
     document.removeEventListener('keydown', onKey);
+    if (lesson) return finishLessonStep(config, session);
     const s = session.stats();
     const pos = session.position;
     const touched = segs.filter((sg) => sg.start < Math.max(pos, 1));
@@ -419,7 +441,7 @@ function viewTyping(config) {
   }
 
   document.addEventListener('keydown', onKey);
-  on('[data-act="quit"]', () => go(config.mode === 'test' ? viewTestSetup : viewPractice));
+  on('[data-act="quit"]', () => go(lesson ? viewLessonIntro : config.mode === 'test' ? viewTestSetup : viewPractice, config.index));
   on('[data-act="restart"]', (el) => { el.blur(); go(viewTyping, config); });
   cleanup = () => { clearInterval(ticker); document.removeEventListener('keydown', onKey); };
 }
@@ -475,6 +497,200 @@ function viewResults(r, config, newBadges, typedPassages) {
   });
   on('[data-act="next"]', () => go(viewTyping, { mode: 'practice', kind: 'passage', passages: [next] }));
   const keyHandler = (e) => { if (e.key === 'Enter') { e.preventDefault(); $('[data-act="again"]')?.click(); } };
+  document.addEventListener('keydown', keyHandler);
+  cleanup = () => document.removeEventListener('keydown', keyHandler);
+}
+
+// ---------------- lessons ----------------
+function osToggle() {
+  const os = getOS();
+  return `<div class="os-toggle" role="group" aria-label="Keyboard type">
+    <button class="${os === 'windows' ? 'on' : ''}" data-os="windows" aria-pressed="${os === 'windows'}">⊞ Windows</button>
+    <button class="${os === 'mac' ? 'on' : ''}" data-os="mac" aria-pressed="${os === 'mac'}">⌘ Mac</button></div>`;
+}
+function wireOsToggle(rerender) {
+  on('[data-os]', (el) => { setOS(el.dataset.os); rerender(); });
+}
+
+const lessonUnlocked = (i, s, p) => i === 0 || p.settings.unlockLessons || s.lessonsPassed.has(LESSONS[i - 1].id);
+const lessonKeys = (l) => [...(l.keys + (l.extra || ''))];
+const capLabel = (k) => k.toUpperCase();
+
+function viewLessons() {
+  const p = me();
+  if (!p) return go(viewHome);
+  const s = summarize(store.resultsFor(p.id));
+  const nextUp = LESSONS.findIndex((l) => !s.lessonsPassed.has(l.id));
+  app.innerHTML = `
+    <header class="top">
+      <button class="ghost" data-act="back">← Back</button>
+      <h2>Typing lessons</h2>
+      ${osToggle()}
+    </header>
+    <p class="lead center">Learn to type without looking, one or two keys at a time. Pass a lesson with ${PASS_ACCURACY}% accuracy to open the next one. Being careful matters more than being fast!</p>
+    ${UNITS.map((unit) => `
+      <h3>${esc(unit)}</h3>
+      <div class="lessons">
+        ${LESSONS.map((l, i) => (l.unit !== unit ? '' : `
+          <button class="lesson-card ${i === nextUp ? 'next-up' : ''}" data-lesson="${i}" ${lessonUnlocked(i, s, p) ? '' : 'disabled'}>
+            <span class="lnum">${l.icon || i}</span>
+            <span class="ltitle">${esc(l.title)}</span>
+            <span class="lkeys">${lessonKeys(l).map((k) => `<span class="keycap sm">${esc(capLabel(k))}</span>`).join('')}</span>
+            <span class="stars ${s.lessonStars[l.id] ? '' : 'none'}">${lessonUnlocked(i, s, p) ? starStr(s.lessonStars[l.id] || 0) : '🔒'}</span>
+          </button>`)).join('')}
+      </div>`).join('')}`;
+  on('[data-act="back"]', () => go(viewDashboard));
+  on('[data-lesson]', (el) => go(viewLessonIntro, Number(el.dataset.lesson)));
+  wireOsToggle(() => go(viewLessons));
+}
+
+function lessonExplainer(l, names) {
+  if (l.id === 'posture') return '';
+  if (l.verses) return '<p>Time to put it all together! Type whole Bible verses with capitals and punctuation. Keep your eyes on the screen and your fingers coming home.</p>';
+  if (l.id === 'shift') {
+    return `<p>To make a <b>capital letter</b>, use the <b>${names.shift}</b> key with the pinky of the <b>other</b> hand:</p>
+      <ul><li>Letter on the left side of the keyboard (like <b>D</b>)? Hold the <b>right</b> ${names.shift} with your right pinky.</li>
+      <li>Letter on the right side (like <b>J</b>)? Hold the <b>left</b> ${names.shift} with your left pinky.</li>
+      <li>Hold ${names.shift} down, tap the letter, then let go of both and go back home.</li></ul>`;
+  }
+  if (l.id === 'punct') {
+    return `<ul><li>The <b>apostrophe (')</b> is right next to ; - stretch your right pinky one key to the right.</li>
+      <li>The <b>colon (:)</b> is ${names.shift} + ; and the <b>question mark (?)</b> is ${names.shift} + /. Hold the left ${names.shift} with your left pinky.</li></ul>`;
+  }
+  if (l.review) return '<p>No new keys this time. Practice all the keys you have learned so far, then type some real words and phrases.</p>';
+  return '';
+}
+
+function viewLessonIntro(index) {
+  const p = me();
+  if (!p) return go(viewHome);
+  const l = LESSONS[index];
+  if (!l) return go(viewLessons);
+  const s = summarize(store.resultsFor(p.id));
+  if (!lessonUnlocked(index, s, p)) return go(viewLessons);
+  const names = keyNames();
+  const exercises = buildExercises(index);
+  const guide = lessonGuide(index);
+  const keys = lessonKeys(l);
+  app.innerHTML = `
+    <header class="top">
+      <button class="ghost" data-act="back">← Lessons</button>
+      <h2>${l.icon || `Lesson ${index}:`} ${esc(l.title)}</h2>
+      ${osToggle()}
+    </header>
+    ${l.id === 'posture' ? `
+      <p class="lead center">Before you type, get your body and hands ready. Good habits now make typing easier and keep your hands comfortable.</p>
+      <div class="posture">${POSTURE.map((x) => `<div class="pcard"><span>${x.icon}</span><b>${esc(x.title)}</b><p>${esc(x.text)}</p></div>`).join('')}</div>
+    ` : `
+      <div class="lesson-intro">
+        ${keys.length ? `<div class="newkeys"><span class="muted">New keys</span>${keys.map((k) => `<span class="keycap lg">${esc(capLabel(k))}</span>`).join('')}</div>` : ''}
+        ${lessonExplainer(l, names)}
+        ${guide.steps.length ? `<ul class="reach">${guide.steps.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+        <p class="tipbox">💡 ${esc(guide.tip)}</p>
+      </div>`}
+    <div id="kb"></div>
+    <div id="hands" class="hands-wrap"></div>
+    <div class="panel steps">
+      <h3>In this lesson</h3>
+      <ol>${exercises.map((e) => `<li>${esc(e.title)}</li>`).join('')}</ol>
+      <button class="primary huge" data-act="start">${l.id === 'posture' ? 'Put my fingers on home row' : 'Start lesson'}</button>
+      <p class="note">Press ${names.enter} to start.</p>
+    </div>`;
+  renderKeyboard($('#kb'), { mark: l.id === 'posture' ? [...'asdfjkl;', 'Space'] : [...l.keys, ...[...(l.extra || '')].map((c) => ({ ':': ';', '?': '/' }[c] || c)), ...(l.id === 'shift' ? ['ShiftL', 'ShiftR'] : [])] });
+  const hands = renderHands($('#hands'));
+  const lit = {};
+  if (l.id === 'posture') Object.assign(lit, { L1: 'A', L2: 'S', L3: 'D', L4: 'F', R4: 'J', R3: 'K', R2: 'L', R1: ';', T: 'space' });
+  for (const k of l.keys) Object.assign(lit, { [fingerOf(k)]: k === ';' || k === ',' || k === '.' || k === "'" ? k : k.toUpperCase() });
+  if (l.id === 'shift') Object.assign(lit, { L1: names.shift, R1: names.shift });
+  hands.show(lit);
+  const start = () => go(viewTyping, { kind: 'lesson', mode: 'lesson', index, step: 0, exercises });
+  on('[data-act="start"]', start);
+  on('[data-act="back"]', () => go(viewLessons));
+  wireOsToggle(() => go(viewLessonIntro, index));
+  const keyHandler = (e) => { if (e.key === 'Enter') { e.preventDefault(); start(); } };
+  document.addEventListener('keydown', keyHandler);
+  cleanup = () => document.removeEventListener('keydown', keyHandler);
+}
+
+async function finishLessonStep(config, session) {
+  const s = session.stats();
+  const t = config.totals || (config.totals = { keystrokes: 0, errors: 0, correctChars: 0, typedChars: 0, ms: 0, missed: {} });
+  t.keystrokes += s.keystrokes; t.errors += s.errors; t.correctChars += s.correctChars; t.typedChars += s.typedChars;
+  t.ms += session.elapsedMs();
+  for (const [k, n] of Object.entries(session.missed)) t.missed[k] = (t.missed[k] || 0) + n;
+  if (config.step < config.exercises.length - 1) return go(viewLessonStep, config, s);
+
+  const p = me();
+  const l = LESSONS[config.index];
+  const stats = computeStats({ ...t, elapsedMs: t.ms });
+  const passed = stats.accuracy >= PASS_ACCURACY;
+  const before = summarize(store.resultsFor(p.id)).badges;
+  try {
+    await store.addResult({
+      profileId: p.id, mode: 'lesson', kind: 'lesson', passageIds: [l.id], refs: `Lesson: ${l.title}`,
+      completed: passed, easyMode: false, seconds: stats.seconds, wpm: stats.wpm, rawWpm: stats.rawWpm,
+      accuracy: stats.accuracy, correctChars: stats.correctChars, keystrokes: stats.keystrokes, errors: stats.errors, missed: t.missed,
+    });
+  } catch (err) { toast(`Could not save this lesson (${err.message}).`); }
+  const after = summarize(store.resultsFor(p.id)).badges;
+  const newBadges = BADGES.filter((b) => after.includes(b.id) && !before.includes(b.id));
+  go(viewLessonResults, config.index, stats, passed, newBadges, t.missed);
+}
+
+function viewLessonStep(config, s) {
+  const next = config.exercises[config.step + 1];
+  const good = s.accuracy >= PASS_ACCURACY;
+  app.innerHTML = `
+    <section class="center step-done">
+      <div class="bigemoji">${good ? '👍' : '💪'}</div>
+      <h2 class="big">${good ? 'Nice work!' : 'Keep going!'}</h2>
+      <p class="lead">Part ${config.step + 1} of ${config.exercises.length} done with <b>${Math.round(s.accuracy)}%</b> accuracy.
+        ${good ? '' : 'Slow down a little and keep your fingers on home row.'}</p>
+      <p class="lead">Next: <b>${esc(next.title)}</b></p>
+      <button class="primary huge" data-act="next">Keep going →</button>
+      <p class="note">Press ${keyNames().enter} to keep going.</p>
+    </section>`;
+  const cont = () => go(viewTyping, { ...config, step: config.step + 1 });
+  on('[data-act="next"]', cont);
+  const keyHandler = (e) => { if (e.key === 'Enter') { e.preventDefault(); cont(); } };
+  document.addEventListener('keydown', keyHandler);
+  cleanup = () => document.removeEventListener('keydown', keyHandler);
+}
+
+function viewLessonResults(index, stats, passed, newBadges, missed) {
+  const l = LESSONS[index];
+  const next = LESSONS[index + 1];
+  const stars = passed ? starsFor(stats.accuracy) : 0;
+  const keys = Object.entries(missed).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  app.innerHTML = `
+    <header class="top">
+      <button class="ghost" data-act="lessons">← Lessons</button>
+      <h2>${esc(l.title)}</h2><div></div>
+    </header>
+    <section class="center">
+      ${passed ? `<div class="bigstars" aria-label="${stars} of 3 stars">${starStr(stars)}</div>` : '<div class="bigemoji">🌱</div>'}
+      <h2 class="big">${passed ? (next ? 'Lesson passed!' : 'You finished every lesson! 🎓') : 'Almost there!'}</h2>
+      <div class="tiles">
+        <div class="tile hero"><b>${Math.round(stats.accuracy)}%</b><span>accuracy</span></div>
+        <div class="tile hero"><b>${stats.wpm}</b><span>words per minute</span></div>
+        <div class="tile"><b>${fmtTime(stats.seconds)}</b><span>time</span></div>
+        <div class="tile"><b>${stats.errors}</b><span>mistakes</span></div>
+      </div>
+      <p class="lead">${passed
+        ? (next ? `Great job! <b>${esc(next.title)}</b> is unlocked.` : 'Now try Practice and Speed Tests with Bible verses.')
+        : `You need ${PASS_ACCURACY}% accuracy to pass. Go a little slower, keep your eyes on the screen and let each finger come back home. You can do it!`}</p>
+      ${newBadges.length ? `<div class="newbadges">${newBadges.map((b) => `<div class="badge got"><span>${b.emoji}</span><b>New badge: ${esc(b.name)}</b><small>${esc(b.desc)}</small></div>`).join('')}</div>` : ''}
+      ${keys.length ? `<div class="missed"><h3>Keys to practice</h3><div class="keycaps">${keys.map(([k, n]) => `<span class="keycap">${esc(keyLabel(k))}<small>×${n}</small></span>`).join('')}</div></div>` : ''}
+      <div class="row center-row">
+        ${passed && next ? '<button class="primary alt" data-act="next">Next lesson →</button>' : ''}
+        <button class="${passed && next ? 'ghost' : 'primary'}" data-act="again">↻ ${passed ? 'Do it again' : 'Try again'}</button>
+      </div>
+    </section>`;
+  if (passed) celebrate();
+  on('[data-act="lessons"]', () => go(viewLessons));
+  on('[data-act="next"]', () => go(viewLessonIntro, index + 1));
+  on('[data-act="again"]', () => go(viewLessonIntro, index));
+  const keyHandler = (e) => { if (e.key === 'Enter') { e.preventDefault(); $(passed && next ? '[data-act="next"]' : '[data-act="again"]')?.click(); } };
   document.addEventListener('keydown', keyHandler);
   cleanup = () => document.removeEventListener('keydown', keyHandler);
 }
@@ -589,7 +805,7 @@ function viewProgress() {
       <h3>Recent sessions</h3>
       ${history.length ? `<div class="table-wrap"><table>
         <thead><tr><th>Date</th><th>Type</th><th>Verses</th><th class="num">WPM</th><th class="num">Accuracy</th><th class="num">Time</th></tr></thead>
-        <tbody>${history.map((r) => `<tr><td>${fmtDate(r.date)}</td><td>${r.mode === 'test' ? '⏱️ Test' : '✏️ Practice'}${r.easyMode ? ' (easy)' : ''}</td>
+        <tbody>${history.map((r) => `<tr><td>${fmtDate(r.date)}</td><td>${r.mode === 'test' ? '⏱️ Test' : r.mode === 'lesson' ? '🖐️ Lesson' : '✏️ Practice'}${r.easyMode ? ' (easy)' : ''}</td>
           <td class="refs">${esc(r.refs)}</td><td class="num">${r.wpm}</td><td class="num">${Math.round(r.accuracy)}%</td><td class="num">${fmtTime(r.seconds)}</td></tr>`).join('')}</tbody>
       </table></div>` : '<p class="note">Nothing yet. Go type a verse!</p>'}
     </section>`;
@@ -621,6 +837,7 @@ function viewProfileEditor(profileId, back) {
         <label class="check"><input type="checkbox" name="easyMode" ${st.easyMode ? 'checked' : ''}> <span><b>Easy mode</b> - only lowercase letters and spaces (no capitals or punctuation). Good for young beginners.</span></label>
         <label class="check"><input type="checkbox" name="stopOnError" ${st.stopOnError ? 'checked' : ''}> <span><b>Wait for the right key</b> - the cursor will not move on until the correct key is pressed. Turn off for older kids, who will then use Backspace to fix mistakes.</span></label>
         <label class="check"><input type="checkbox" name="showKeyboard" ${st.showKeyboard ? 'checked' : ''}> <span><b>Show keyboard guide</b> - lights up the next key and which finger to use.</span></label>
+        <label class="check"><input type="checkbox" name="unlockLessons" ${st.unlockLessons ? 'checked' : ''}> <span><b>Unlock all lessons</b> - normally each lesson opens once the one before it is passed with ${PASS_ACCURACY}% accuracy.</span></label>
         <label class="check"><input type="checkbox" name="sound" ${st.sound ? 'checked' : ''}> <span><b>Sound on mistakes</b> - a soft beep when a wrong key is pressed.</span></label>
         <label>Speed goal (words per minute) <input name="goalWpm" type="number" min="1" max="200" value="${st.goalWpm}"></label>
         <p class="note">Rough guide: ages 7-8 aim for 10-15 WPM, ages 9-11 for 15-25, teens 30-40+.</p>
@@ -640,7 +857,7 @@ function viewProfileEditor(profileId, back) {
       color: f.get('color'),
       settings: {
         easyMode: f.has('easyMode'), stopOnError: f.has('stopOnError'), showKeyboard: f.has('showKeyboard'),
-        sound: f.has('sound'), goalWpm: Number(f.get('goalWpm')) || 20,
+        sound: f.has('sound'), unlockLessons: f.has('unlockLessons'), goalWpm: Number(f.get('goalWpm')) || 20,
       },
     };
     try {
@@ -688,6 +905,11 @@ function viewParent() {
         <button class="ghost danger-text" data-del="${esc(v.id)}">Remove</button></div>`).join('')}</div>
     </section>
     <section class="panel">
+      <h3>This computer's keyboard</h3>
+      <p class="note">Hand placement is the same on both. This only changes the key names shown, like <b>delete</b> and <b>return</b> on a Mac versus <b>Backspace</b> and <b>Enter</b> on Windows. It is remembered separately on each computer.</p>
+      ${osToggle()}
+    </section>
+    <section class="panel">
       <h3>Backup</h3>
       <p class="note">${store.remote ? '✅ Progress is saved on the server (your NAS), so it is shared by every computer in the house.' : '⚠️ Progress is saved in this browser only.'}</p>
       <div class="row">
@@ -706,6 +928,7 @@ function viewParent() {
     </section>`;
   on('[data-act="home"]', () => go(viewHome));
   on('[data-act="add"]', () => go(viewProfileEditor, null, viewParent));
+  wireOsToggle(() => go(viewParent));
   on('[data-edit]', (el) => go(viewProfileEditor, el.dataset.edit, viewParent));
   on('[data-del]', async (el) => {
     if (!confirm('Remove this passage?')) return;

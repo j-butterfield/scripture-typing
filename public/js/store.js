@@ -31,7 +31,7 @@ async function http(method, url, body) {
 }
 
 function defaultSettings(s = {}) {
-  return { easyMode: false, stopOnError: true, showKeyboard: true, sound: false, goalWpm: 20, ...s };
+  return { easyMode: false, stopOnError: true, showKeyboard: true, sound: false, unlockLessons: false, goalWpm: 20, ...s };
 }
 
 class Store {
