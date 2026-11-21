@@ -8,7 +8,13 @@ import { LESSONS, UNITS, POSTURE, PASS_ACCURACY, buildExercises, lessonGuide, fi
 
 const app = document.getElementById('app');
 const LAST_PROFILE_KEY = 'stt-last-profile';
-const AVATARS = ['🐑', '🦁', '🐻', '🦊', '🐰', '🐼', '🐯', '🐸', '🦉', '🐢', '🐳', '🦋', '🐝', '🐞', '🕊️', '⭐'];
+// Clay animal avatars (the same family set as the Finance app), in public/art/avatars/.
+const AVATARS = ['fox', 'dinosaur', 'panda', 'unicorn', 'tiger', 'frog', 'owl', 'cat', 'puppy', 'bunny', 'bear', 'penguin', 'shark', 'raccoon', 'horse', 'lion'];
+// Profiles made before the art keep their emoji until a parent picks a new picture.
+const avatarHtml = (a, cls = '') => (AVATARS.includes(a)
+  ? `<img class="avatar ${cls}" src="art/avatars/${a}.webp" alt="${a}" draggable="false">`
+  : `<span class="avatar ${cls}">${esc(a)}</span>`);
+const icon = (name, cls = '') => `<img class="art-icon ${cls}" src="art/icons/${name}.webp" alt="" draggable="false">`;
 const COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#c0392b'];
 
 let ui = { profileId: null, collection: 'bible', level: 1, doc: 'declaration', testCollection: 'bible', testLevel: 1, testDoc: 'all', testMinutes: 1, search: null };
@@ -158,15 +164,16 @@ function viewHome() {
   const v = verseOfDay();
   app.innerHTML = `
     <header class="top">
-      <h1 class="brand">📖 Scripture Typing</h1>
+      <h1 class="brand">${icon('practice')} Scripture Typing</h1>
       <button class="ghost" data-act="parent">⚙️ Parents</button>
     </header>
+    <img class="welcome-art" src="art/welcome.webp" alt="An open Bible on a reading stand with a colorful keyboard, a dove on a plant and a candle" draggable="false">
     <section class="center">
       <h2 class="big">Who is typing today?</h2>
       <div class="profiles">
         ${store.profiles.map((p) => `
           <button class="profile-card" data-id="${esc(p.id)}" style="--accent:${esc(p.color)}">
-            <span class="avatar">${esc(p.avatar)}</span><span class="pname">${esc(p.name)}</span>
+            ${avatarHtml(p.avatar)}<span class="pname">${esc(p.name)}</span>
           </button>`).join('')}
         <button class="profile-card add" data-act="add"><span class="avatar">＋</span><span class="pname">Add a typist</span></button>
       </div>
@@ -197,7 +204,7 @@ function viewDashboard() {
       <button class="ghost" data-act="parent">⚙️</button>
     </header>
     <section class="center">
-      <div class="hello" style="--accent:${esc(p.color)}"><span class="avatar lg">${esc(p.avatar)}</span>
+      <div class="hello" style="--accent:${esc(p.color)}">${avatarHtml(p.avatar, 'lg')}
         <h2 class="big">${hello}, ${esc(p.name)}!</h2></div>
       <div class="tiles">
         <div class="tile"><b>${s.bestWpm || '–'}</b><span>best speed (WPM)</span></div>
@@ -206,10 +213,10 @@ function viewDashboard() {
         <div class="tile"><b>${s.lessonsPassed.size} / ${LESSONS.length}</b><span>lessons passed</span></div>
       </div>
       <div class="menu">
-        <button class="menu-btn lessons" data-act="lessons"><span>🖐️</span><b>Lessons</b><small>Learn where your fingers go</small></button>
-        <button class="menu-btn practice" data-act="practice"><span>✏️</span><b>Practice</b><small>Bible verses or America's founding documents</small></button>
-        <button class="menu-btn test" data-act="test"><span>⏱️</span><b>Speed Test</b><small>See how fast and careful you can type</small></button>
-        <button class="menu-btn progress" data-act="progress"><span>📈</span><b>My Progress</b><small>Charts, badges and tricky keys</small></button>
+        <button class="menu-btn lessons" data-act="lessons">${icon('lessons')}<b>Lessons</b><small>Learn where your fingers go</small></button>
+        <button class="menu-btn practice" data-act="practice">${icon('practice')}<b>Practice</b><small>Bible verses or America's founding documents</small></button>
+        <button class="menu-btn test" data-act="test">${icon('speed-test')}<b>Speed Test</b><small>See how fast and careful you can type</small></button>
+        <button class="menu-btn progress" data-act="progress">${icon('progress')}<b>My Progress</b><small>Charts, badges and tricky keys</small></button>
       </div>
       <div class="votd small"><b>Verse of the day</b><p>${esc(v.text)}</p><cite>${esc(v.ref)}</cite>
         <button class="primary" data-act="votd">Type it</button></div>
@@ -302,7 +309,7 @@ function viewPractice() {
       <h2>Practice</h2><div></div>
     </header>
     <div class="choices collections">${Object.entries(COLLECTIONS).map(([id, c]) => `
-      <button class="choice ${id === ui.collection ? 'on' : ''}" data-col="${id}" aria-pressed="${id === ui.collection}">${c.emoji} ${c.name}</button>`).join('')}</div>
+      <button class="choice ${id === ui.collection ? 'on' : ''}" data-col="${id}" aria-pressed="${id === ui.collection}">${icon(id === 'bible' ? 'practice' : 'founding', 'sm')} ${c.name}</button>`).join('')}</div>
     ${bible ? renderSearch(s) : ''}
     ${bible && ui.search ? '' : `<div class="tabs" role="tablist">
       ${bible ? Object.entries(LEVELS).map(([n, L]) => `
@@ -916,7 +923,7 @@ function viewProgress() {
   app.innerHTML = `
     <header class="top">
       <button class="ghost" data-act="back">← Back</button>
-      <h2>${esc(p.avatar)} ${esc(p.name)}'s progress</h2><div></div>
+      <h2 class="with-avatar">${avatarHtml(p.avatar, 'xs')} ${esc(p.name)}'s progress</h2><div></div>
     </header>
     <div class="tiles">
       <div class="tile"><b>${s.bestWpm || '–'}</b><span>best test speed (WPM)</span></div>
@@ -934,7 +941,7 @@ function viewProgress() {
         <p class="note">These are the keys you most often missed. Practice them slowly and they will get easier.</p>` : '<p class="note">No missed keys yet!</p>'}
     </section>
     <section class="panel">
-      <h3>Badges (${s.badges.length} of ${BADGES.length})</h3>
+      <h3 class="with-icon">${icon('badges', 'sm')} Badges (${s.badges.length} of ${BADGES.length})</h3>
       <div class="badges">${BADGES.map((b) => `<div class="badge ${s.badges.includes(b.id) ? 'got' : ''}" title="${esc(b.desc)}"><span>${b.emoji}</span><b>${esc(b.name)}</b><small>${esc(b.desc)}</small></div>`).join('')}</div>
     </section>
     <section class="panel">
@@ -954,7 +961,7 @@ function viewProgress() {
 function viewProfileEditor(profileId, back) {
   const p = profileId ? store.profile(profileId) : null;
   const st = p?.settings || { easyMode: false, stopOnError: true, showKeyboard: true, sound: false, goalWpm: 20 };
-  const avatar = p?.avatar || AVATARS[store.profiles.length % AVATARS.length];
+  const avatar = AVATARS.includes(p?.avatar) ? p.avatar : AVATARS[store.profiles.length % AVATARS.length];
   const color = p?.color || COLORS[store.profiles.length % COLORS.length];
   app.innerHTML = `
     <header class="top">
@@ -964,7 +971,7 @@ function viewProfileEditor(profileId, back) {
     <form class="panel form" id="pf">
       <label>Name <input name="name" maxlength="40" required value="${esc(p?.name || '')}" autocomplete="off"></label>
       <fieldset><legend>Picture</legend><div class="pick">
-        ${AVATARS.map((a) => `<label class="pick-item"><input type="radio" name="avatar" value="${a}" ${a === avatar ? 'checked' : ''}><span>${a}</span></label>`).join('')}
+        ${AVATARS.map((a) => `<label class="pick-item avatar-pick"><input type="radio" name="avatar" value="${a}" ${a === avatar ? 'checked' : ''}><span><img src="art/avatars/${a}.webp" alt="${a}"></span></label>`).join('')}
       </div></fieldset>
       <fieldset><legend>Color</legend><div class="pick">
         ${COLORS.map((c) => `<label class="pick-item"><input type="radio" name="color" value="${c}" ${c === color ? 'checked' : ''}><span class="swatch" style="background:${c}"></span></label>`).join('')}
@@ -1024,7 +1031,7 @@ function viewParent() {
       <h3>Typists</h3>
       <div class="plist">${store.profiles.map((p) => {
         const s = summarize(store.resultsFor(p.id));
-        return `<div class="prow"><span class="avatar sm">${esc(p.avatar)}</span><b>${esc(p.name)}</b>
+        return `<div class="prow">${avatarHtml(p.avatar, 'sm')}<b>${esc(p.name)}</b>
           <span class="muted">best ${s.bestWpm} WPM · ${s.avgAcc || '–'}% recent accuracy · ${s.done.size} passages${p.settings.easyMode ? ' · easy mode' : ''}</span>
           <button class="ghost" data-edit="${esc(p.id)}">Edit</button></div>`;
       }).join('') || '<p class="note">No typists yet.</p>'}</div>
@@ -1113,7 +1120,7 @@ function setupMusicControl() {
   const box = document.createElement('div');
   box.className = 'music';
   box.innerHTML = `
-    <button class="music-toggle" type="button" aria-pressed="false" title="Background hymns"><span class="mi">🎵</span><span class="ml">Hymns off</span></button>
+    <button class="music-toggle" type="button" aria-pressed="false" title="Background hymns"><img class="mi" src="art/icons/hymns.webp" alt=""><span class="ml">Hymns off</span></button>
     <div class="music-more" hidden>
       <span class="music-now" aria-live="polite"></span>
       <button class="music-skip" type="button" title="Next hymn" aria-label="Next hymn">⏭</button>

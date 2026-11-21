@@ -21,6 +21,9 @@ const MIME = {
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.jpg': 'image/jpeg',
+  '.mp3': 'audio/mpeg',
   '.ico': 'image/x-icon',
   '.webmanifest': 'application/manifest+json',
 };
@@ -85,7 +88,7 @@ function cleanProfile(body, existing = {}) {
   return {
     id: existing.id || id(),
     name: str(body.name ?? existing.name, 40) || 'Typist',
-    avatar: str(body.avatar ?? existing.avatar, 8) || '🐑',
+    avatar: str(body.avatar ?? existing.avatar, 12) || 'bunny',
     color: /^#[0-9a-f]{6}$/i.test(body.color ?? '') ? body.color : existing.color || '#2a78d6',
     settings: cleanSettings({ ...existing.settings, ...body.settings }),
     createdAt: existing.createdAt || new Date().toISOString(),

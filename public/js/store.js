@@ -70,7 +70,7 @@ class Store {
     let p;
     if (this.remote) p = await http('POST', 'api/profiles', data);
     else {
-      p = { id: uid(), name: data.name || 'Typist', avatar: data.avatar || '🐑', color: data.color || '#2a78d6',
+      p = { id: uid(), name: data.name || 'Typist', avatar: data.avatar || 'bunny', color: data.color || '#2a78d6',
         settings: defaultSettings(data.settings), createdAt: new Date().toISOString() };
     }
     this.state.profiles.push(p);
