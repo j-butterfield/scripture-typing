@@ -570,7 +570,7 @@ function viewLessons() {
 
 function lessonExplainer(l, names) {
   if (l.id === 'posture') return '';
-  if (l.verses) return '<p>Time to put it all together! Type whole Bible verses with capitals and punctuation. Keep your eyes on the screen and your fingers coming home.</p>';
+  if (l.verses) return '<p>Time to put it all together! Type whole Bible verses and the opening of the Constitution, with capitals and punctuation. Keep your eyes on the screen and your fingers coming home.</p>';
   if (l.id === 'shift') {
     return `<p>To make a <b>capital letter</b>, use the <b>${names.shift}</b> key with the pinky of the <b>other</b> hand:</p>
       <ul><li>Letter on the left side of the keyboard (like <b>D</b>)? Hold the <b>right</b> ${names.shift} with your right pinky.</li>

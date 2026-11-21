@@ -10,10 +10,11 @@ test('founding documents are complete, typeable and uniquely identified', () => 
     assert.ok(!ids.has(p.id), `duplicate id ${p.id}`);
     ids.add(p.id);
     assert.match(p.text, /^[\x20-\x7E]+$/, `${p.ref} has untypeable characters`);
-    assert.ok(p.text.length <= 720, `${p.ref} is too long to type in one go`);
+    assert.ok(p.text.length <= 400, `${p.ref} is too long to type in one go`);
     assert.ok(FOUNDING_DOCS.some((d) => d.id === p.doc));
   }
-  assert.equal(FOUNDING.filter((p) => p.doc === 'bill-of-rights').length, 10);
+  const amendments = new Set(FOUNDING.filter((p) => p.doc === 'bill-of-rights').map((p) => p.ref.replace(/ \(part.*/, '')));
+  assert.equal(amendments.size, 10);
 });
 
 test('each document runs from its first words to its last, in order', () => {

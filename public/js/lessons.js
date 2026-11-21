@@ -74,7 +74,7 @@ export const LESSONS = [
   { id: 'qp', unit: 'Top row', title: 'Q and P', keys: 'qp' },
   {
     id: 'top-review', unit: 'Top row', title: 'Top row review', keys: '', review: true,
-    phrases: ['praise the lord', 'the word of the lord is right', 'the lord is good', 'pray always', 'a joyful heart', 'the tree of life', 'the earth is the lords'],
+    phrases: ['praise the lord', 'the word of the lord is right', 'the lord is good', 'pray always', 'a joyful heart', 'the tree of life', 'the earth is the lords', 'we the people'],
   },
   { id: 'c,', unit: 'Bottom row', title: 'C and comma', keys: 'c,' },
   { id: 'vm', unit: 'Bottom row', title: 'V and M', keys: 'vm' },
@@ -83,11 +83,11 @@ export const LESSONS = [
   { id: 'z', unit: 'Bottom row', title: 'Z', keys: 'z' },
   {
     id: 'bottom-review', unit: 'Bottom row', title: 'Bottom row review', keys: '', review: true,
-    phrases: ['jesus wept.', 'pray without ceasing.', 'rejoice evermore.', 'be still, and know that i am god.', 'the lord is my shepherd; i shall not want.', 'in the beginning god created the heaven and the earth.'],
+    phrases: ['jesus wept.', 'pray without ceasing.', 'rejoice evermore.', 'be still, and know that i am god.', 'the lord is my shepherd; i shall not want.', 'in the beginning god created the heaven and the earth.', 'life, liberty and the pursuit of happiness', 'in order to form a more perfect union', 'congress shall make no law'],
   },
   {
     id: 'shift', unit: 'Capitals and punctuation', title: 'Capital letters (Shift)', keys: '', shift: true,
-    phrases: ['Jesus wept.', 'God is love.', 'Noah built an ark.', 'David and Jonathan were friends.', 'The LORD is good.', 'Peter, James and John'],
+    phrases: ['Jesus wept.', 'God is love.', 'Noah built an ark.', 'David and Jonathan were friends.', 'The LORD is good.', 'Peter, James and John', 'We the People of the United States', 'Life, Liberty and the pursuit of Happiness'],
   },
   {
     id: 'punct', unit: 'Capitals and punctuation', title: 'Apostrophe, colon and question mark', keys: "'", extra: ':?/', shift: true,
@@ -99,6 +99,7 @@ export const LESSONS = [
       'Thy word is a lamp unto my feet, and a light unto my path.',
       'The LORD is my shepherd; I shall not want.',
       'I can do all things through Christ which strengtheneth me.',
+      'We the People of the United States, in Order to form a more perfect Union,',
     ],
   },
 ];
